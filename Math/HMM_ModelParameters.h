@@ -5,29 +5,29 @@
 
 #ifndef HMMMODELPARAMETERS_H
 #define HMMMODELPARAMETERS_H
-#include "TwoD_Matrix.h"
+#include "MultidimensionalArray.h"
 
 class HMMModelParameters
 {
 	private:
 		unsigned m_NumberOfHiddenStates;
 		unsigned m_NumberOfEmissionStates;
-		TwoD_Matrix_D m_TransitionMatrix;
-		TwoD_Matrix_D m_EmissionMatrix;
+		MultidimensionalArray<double> m_TransitionMatrix;
+		MultidimensionalArray<double>  m_EmissionMatrix;
 		Array<double> m_InitialDistribution;
 
 	public:
 		HMMModelParameters();
-		HMMModelParameters(const Array<double>& aInitialDistribution, const TwoD_Matrix_D& aTransitionMatrix, const TwoD_Matrix_D& aEmissionMatrix);
+		HMMModelParameters(const Array<double>& aInitialDistribution, const MultidimensionalArray<double>& aTransitionMatrix, const MultidimensionalArray<double>& aEmissionMatrix);
 
 		unsigned getNumberOfHiddenStates() const;
 		unsigned getNumberOfEmissionStates() const;
-		TwoD_Matrix_D getTransitionMatrix() const;
-		TwoD_Matrix_D getEmissionMatrix() const;
+		MultidimensionalArray<double>  getTransitionMatrix() const;
+		MultidimensionalArray<double>  getEmissionMatrix() const;
 		Array<double> getInitialDistribution() const;
 
-		void setTransitionMatrix(const TwoD_Matrix_D& aTransitionMatrix);
-		void setEmissionMatrix(const TwoD_Matrix_D& aEmissionMatrix);
+		void setTransitionMatrix(const MultidimensionalArray<double>& aTransitionMatrix);
+		void setEmissionMatrix(const MultidimensionalArray<double>& aEmissionMatrix);
 		void setInitialDistributionMatrix(const Array<double>& aInitialDistribution);
 
 };

@@ -8,6 +8,7 @@
 
 #include "DebugLogger.h"
 #include <algorithm>   // std::copy
+#include <initializer_list>
 
 template< typename T > 
 class Array
@@ -20,8 +21,9 @@ class Array
 	public:
 
 		Array();
-		Array(const T* aElements, const unsigned& aNumberOfElements);
+		Array(const unsigned& aNumberOfElements, const T* aElements);
 		Array(const unsigned& aNumberOfElements);
+		Array(std::initializer_list<T> aValues);
 		Array(const Array& aNew);
 
 		void setElement(const unsigned& aElementLocation, const T& aElement);
@@ -31,6 +33,7 @@ class Array
 		Array<T> operator= (const Array<T>& aRight);
 		Array<T> operator+ (const Array<T>& aRight) const;
 		Array<T> operator* (const T& aRight) const;
+		Array<T> operator<< (const Array<T>& aRight) const;
 
 		~Array();
 		
@@ -50,7 +53,7 @@ Array<T>::Array()
 * @ param aNumberOfElements The number of elements for the array
 */
 template< typename T >
-Array<T>::Array(const T* aElements, const unsigned& aNumberOfElements)
+Array<T>::Array(const unsigned& aNumberOfElements, const T* aElements)
 {
 	this->m_NumberOfElements = aNumberOfElements;
 	this->m_Elements = new T[aNumberOfElements];
@@ -65,10 +68,22 @@ Array<T>::Array(const unsigned& aNumberOfElements)
 {
 	this->m_NumberOfElements = aNumberOfElements;
 	this->m_Elements = new T[aNumberOfElements];
-	for (int lCount = 0; lCount < aNumberOfElements; lCount++)
+	for (unsigned lCount = 0; lCount < aNumberOfElements; lCount++)
 	{
 		m_Elements[lCount] = T();
 	}
+}
+
+/** Constructor for Array with initializer lists ( Array example = {1,2,3,4} )
+* @param aValues the values of the array
+*/
+template< typename T >
+Array<T>::Array(std::initializer_list<T> aValues)
+{
+	this->m_NumberOfElements = aValues.size();
+	this->m_Elements = new T[aValues.size()];
+
+	std::copy(aValues.begin(), aValues.end(), m_Elements);
 }
 
 /** Copy Constructor
@@ -196,7 +211,7 @@ Array<T> Array<T>::operator * (const T& aRight) const
 	{
 		ltempElements[lCount] = this->m_Elements[lCount] * aRight;
 	}
-	Array<T> lResult = Array<T>(this->m_NumberOfElements, ltempElements);
+	Array<T> lResult(this->m_NumberOfElements, ltempElements);
 	delete[] ltempElements;
 	return lResult;
 }
@@ -212,7 +227,24 @@ Array<T> operator* (const T& aLeft, const Array<T>& aRight)
 	return lResult;
 }
 
+/** insertion operator - creates a new array with the right array appended to the left
+*  @param aRight The array to the right of the << operator
+*/
+template< typename T >
+Array<T> Array<T>::operator << (const Array<T>& aRight) const
+{
+	unsigned lNumberOfElements = aRight.m_NumberOfElements + this->m_NumberOfElements;
+	T* lElements = new T[lNumberOfElements];
 
+	std::copy(this->m_Elements, this->m_Elements + this->m_NumberOfElements, lElements);
+	std::copy(aRight.m_Elements, aRight.m_Elements + aRight.m_NumberOfElements, lElements + this->m_NumberOfElements);
+
+	Array<T> lResult(lNumberOfElements, lElements);
+
+	delete[] lElements;
+
+	return lResult;
+}
 
 template< typename T >
 Array<T> operator* (const T& aLeft, const Array<T>& aRight);

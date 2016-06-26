@@ -28,7 +28,18 @@ void DebugLogger::setDebugFlag(bool aDebugFlag)
 {
 	m_debugFlag = aDebugFlag;
 
-	DebugLogger::logMessage(MessageLoggerType::Information, __FUNCTION__, "Debug Flag Set True");
+	char* lMessage;
+
+	if (m_debugFlag)
+	{
+		lMessage = "Debug Flag Set True";
+	}
+	else
+	{
+		lMessage = "Debug Flag Set False";
+	}
+
+	DebugLogger::logMessage(MessageLoggerType::Information, __FUNCTION__, lMessage);
 
 }
 

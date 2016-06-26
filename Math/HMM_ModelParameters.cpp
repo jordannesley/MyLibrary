@@ -13,8 +13,8 @@ HMMModelParameters::HMMModelParameters()
 	m_NumberOfHiddenStates = 0;
 
 	m_InitialDistribution = Array<double>();
-	m_TransitionMatrix = TwoD_Matrix_D();
-	m_EmissionMatrix = TwoD_Matrix_D();
+	m_TransitionMatrix = MultidimensionalArray<double>();
+	m_EmissionMatrix = MultidimensionalArray<double>();
 }
 
 /** Constructor for HMMModelParameters
@@ -24,15 +24,15 @@ HMMModelParameters::HMMModelParameters()
 * @param aTransitionMatrix The transition matrix
 * @param aEmissionMatrix The emission matrix
 */
-HMMModelParameters::HMMModelParameters(const Array<double>& aInitialDistribution, const TwoD_Matrix_D& aTransitionMatrix, const TwoD_Matrix_D& aEmissionMatrix)
+HMMModelParameters::HMMModelParameters(const Array<double>& aInitialDistribution, const MultidimensionalArray<double>& aTransitionMatrix, const MultidimensionalArray<double>& aEmissionMatrix)
 {
 	unsigned lNumberOfHiddenStates = aInitialDistribution.getNumberOfElements();
-	unsigned lNumberOfEmissionStates = aEmissionMatrix.getCols();
+	unsigned lNumberOfEmissionStates = aEmissionMatrix.getNumberOfElementsOfDimension(1);
 
 	// check the input values
 	if (aInitialDistribution.getNumberOfElements() != lNumberOfHiddenStates && aInitialDistribution.getNumberOfElements() != 1) throw 69;
-	if (aTransitionMatrix.getRows() != lNumberOfHiddenStates && aTransitionMatrix.getCols() != lNumberOfHiddenStates) throw 69;
-	if (aEmissionMatrix.getRows() != lNumberOfHiddenStates && aEmissionMatrix.getCols() != lNumberOfEmissionStates) throw 69;
+	if (aTransitionMatrix.getNumberOfElementsOfDimension(0) != lNumberOfHiddenStates && aTransitionMatrix.getNumberOfElementsOfDimension(1) != lNumberOfHiddenStates) throw 69;
+	if (aEmissionMatrix.getNumberOfElementsOfDimension(0) != lNumberOfHiddenStates && aEmissionMatrix.getNumberOfElementsOfDimension(1) != lNumberOfEmissionStates) throw 69;
 
 	m_NumberOfHiddenStates = lNumberOfHiddenStates;
 	m_NumberOfEmissionStates = lNumberOfEmissionStates;
@@ -58,14 +58,14 @@ unsigned HMMModelParameters::getNumberOfEmissionStates() const
 
 /** Returns the emission Matrix
 */
-TwoD_Matrix_D HMMModelParameters::getEmissionMatrix() const
+MultidimensionalArray<double> HMMModelParameters::getEmissionMatrix() const
 {
 	return m_EmissionMatrix;
 }
 
 /** Returns the Transition Matrix
 */
-TwoD_Matrix_D HMMModelParameters::getTransitionMatrix() const
+MultidimensionalArray<double> HMMModelParameters::getTransitionMatrix() const
 {
 	return m_TransitionMatrix;
 }
@@ -80,7 +80,7 @@ Array<double> HMMModelParameters::getInitialDistribution() const
 /** sets the transition matrix
 * @param aTransitionMatrix The new transition matrix
 */
-void HMMModelParameters::setTransitionMatrix(const TwoD_Matrix_D& aTransitionMatrix)
+void HMMModelParameters::setTransitionMatrix(const MultidimensionalArray<double>& aTransitionMatrix)
 {
 	m_TransitionMatrix = aTransitionMatrix;
 }
@@ -88,7 +88,7 @@ void HMMModelParameters::setTransitionMatrix(const TwoD_Matrix_D& aTransitionMat
 /** sets the emission matrix
 * @param aEmissionMatrix The new emission matrix
 */
-void HMMModelParameters::setEmissionMatrix(const TwoD_Matrix_D& aEmissionMatrix)
+void HMMModelParameters::setEmissionMatrix(const MultidimensionalArray<double>& aEmissionMatrix)
 {
 	m_EmissionMatrix = aEmissionMatrix;
 }

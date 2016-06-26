@@ -15,7 +15,7 @@ HiddenMarkovModel::HiddenMarkovModel(const HMMModelParameters& aModelParameters,
 * @param aEmissionMatrix The emission matrix
 * @param aData The to model after
 */
-HiddenMarkovModel::HiddenMarkovModel(const Array<double>& aInitialDistribution, const TwoD_Matrix_D& aTransitionMatrix, const TwoD_Matrix_D& aEmissionMatrix, const Array<double> aData)
+HiddenMarkovModel::HiddenMarkovModel(const Array<double>& aInitialDistribution, const MultidimensionalArray<double>& aTransitionMatrix, const MultidimensionalArray<double>& aEmissionMatrix, const Array<double> aData)
 {
 	m_ModelParameters = HMMModelParameters(aInitialDistribution, aTransitionMatrix, aEmissionMatrix);
 	m_GMM = GuassianMixtureModel(m_ModelParameters.getNumberOfEmissionStates(), aData);
@@ -29,7 +29,7 @@ HiddenMarkovModel::HiddenMarkovModel(const Array<double>& aInitialDistribution, 
 */
 void HiddenMarkovModel::startTraining(const unsigned& aBaumWelchIterations, const bool aConvergenceCheck, const double aConvergenceValue)
 {
-	unsigned lTimeIterations = this->m_GMM.getStates().getRows() - 1;
+	unsigned lTimeIterations = this->m_GMM.getStates().getNumberOfElementsOfDimension(0) - 1;
 	double lFitness = 0.0;
 	double lOldFitness = 0.0;
 
@@ -66,9 +66,9 @@ void HiddenMarkovModel::startTraining(const unsigned& aBaumWelchIterations, cons
 * @param aModelParameters The model parameters of the hidden markov model
 * @param aTimerIterations The number of time iterations to run the forward algorithm
 */
-Array<double> HiddenMarkovModel::ForwardAlgorithm(TwoD_Matrix_D aObservations, HMMModelParameters aModelParameters, unsigned aTimerIterations)
+Array<double> HiddenMarkovModel::ForwardAlgorithm(MultidimensionalArray<double> aObservations, HMMModelParameters aModelParameters, unsigned aTimerIterations)
 {
-	if (aTimerIterations > aObservations.getRows() - 1) throw 69;
+	if (aTimerIterations > aObservations.getNumberOfElementsOfDimension(0) - 1) throw 69;
 
 	unsigned lNumberOfHiddenStates = aModelParameters.getNumberOfHiddenStates();
 	unsigned lNumberOfEmissionStates = aModelParameters.getNumberOfEmissionStates();
@@ -98,7 +98,7 @@ Array<double> HiddenMarkovModel::ForwardAlgorithm(TwoD_Matrix_D aObservations, H
 			lTemp.setElement(lCountN1, 0.0);
 			for (unsigned lCountN2 = 0; lCountN2 < lNumberOfHiddenStates; lCountN2++)
 			{
-				lTemp.setElement(lCountN1, lTemp.getElement(lCountN1) + aModelParameters.getTransitionMatrix().getElement(lCountN2, lCountN1) * lAlpha.getElement(lCountN2));
+				lTemp.setElement(lCountN1, lTemp.getElement(lCountN1) + aModelParameters.getTransitionMatrix().getElement({ lCountN2, lCountN1 }) * lAlpha.getElement(lCountN2));
 			}
 			lTemp.setElement(lCountN1, lTemp.getElement(lCountN1) * HiddenStateEmission(lCountN1, lTCount, aObservations, aModelParameters.getEmissionMatrix()));
 		}
@@ -113,15 +113,15 @@ Array<double> HiddenMarkovModel::ForwardAlgorithm(TwoD_Matrix_D aObservations, H
 * @param aModelParameters The model parameters of the hidden markov model
 * @param aTimerIterations The number of time iterations to run the forward algorithm
 */
-Array<double> HiddenMarkovModel::BackwardAlgorithm(TwoD_Matrix_D aObservations, HMMModelParameters aModelParameters, unsigned aTimerIterations)
+Array<double> HiddenMarkovModel::BackwardAlgorithm(MultidimensionalArray<double> aObservations, HMMModelParameters aModelParameters, unsigned aTimerIterations)
 {
-	if (aTimerIterations > aObservations.getRows()-1) throw 69;
+	if (aTimerIterations > aObservations.getNumberOfElementsOfDimension(0)-1) throw 69;
 
 	unsigned lNumberOfHiddenStates = aModelParameters.getNumberOfHiddenStates();
 	unsigned lNumberOfEmissionStates = aModelParameters.getNumberOfEmissionStates();
 
 	// Set lTcount to the last time
-	unsigned lTcount = aObservations.getRows() - 1;
+	unsigned lTcount = aObservations.getNumberOfElementsOfDimension(0) - 1;
 
 	Array<double> lBeta = Array<double>(lNumberOfHiddenStates);
 
@@ -143,7 +143,7 @@ Array<double> HiddenMarkovModel::BackwardAlgorithm(TwoD_Matrix_D aObservations, 
 		{
 			for (unsigned lCountN2 = 0; lCountN2 < lNumberOfHiddenStates; lCountN2++)
 			{
-				lTemp.setElement(lCountN1, lTemp.getElement(lCountN1) + aModelParameters.getTransitionMatrix().getElement(lCountN1, lCountN2) * lBeta.getElement(lCountN2) * HiddenStateEmission(lCountN2, lTcount + 1, aObservations, aModelParameters.getEmissionMatrix()));
+				lTemp.setElement(lCountN1, lTemp.getElement(lCountN1) + aModelParameters.getTransitionMatrix().getElement({ lCountN1, lCountN2 }) * lBeta.getElement(lCountN2) * HiddenStateEmission(lCountN2, lTcount + 1, aObservations, aModelParameters.getEmissionMatrix()));
 			}
 		}
 		lBeta = lTemp;
@@ -158,55 +158,53 @@ Array<double> HiddenMarkovModel::BackwardAlgorithm(TwoD_Matrix_D aObservations, 
 * @param aObservations The discrete states of observations
 * @param aEmissionMatrix The emission matrix of the hidden markov model
 */
-double HiddenMarkovModel::HiddenStateEmission(const unsigned aCountN, const unsigned aCountT, const TwoD_Matrix_D aObservations, const TwoD_Matrix_D aEmissionMatrix)
+double HiddenMarkovModel::HiddenStateEmission(const unsigned aCountN, const unsigned aCountT, const MultidimensionalArray<double> aObservations, const MultidimensionalArray<double> aEmissionMatrix)
 {
 	double lResult = 0.0;
-	for (unsigned lCountM = 0; lCountM < aObservations.getCols(); lCountM++)
+	for (unsigned lCountM = 0; lCountM < aObservations.getNumberOfElementsOfDimension(1); lCountM++)
 	{
-		lResult = lResult + aObservations.getElement(aCountT, lCountM) * aEmissionMatrix.getElement(aCountN, lCountM);
+		lResult = lResult + aObservations.getElement({ aCountT, lCountM }) * aEmissionMatrix.getElement({ aCountN, lCountM });
 	}
 
 	return lResult;
 }
 
-HMMModelParameters HiddenMarkovModel::BaumWelchAlorithm(const TwoD_Matrix_D aObservations, const HMMModelParameters aModelParameters)
+HMMModelParameters HiddenMarkovModel::BaumWelchAlorithm(const MultidimensionalArray<double> aObservations, const HMMModelParameters aModelParameters)
 {
 	unsigned lNumberOfHiddenStates = aModelParameters.getNumberOfHiddenStates();
 	unsigned lNumberOfEmissionStates = aModelParameters.getNumberOfEmissionStates();
-	unsigned lTimeIterations = aObservations.getRows();
+	unsigned lTimeIterations = aObservations.getNumberOfElementsOfDimension(0);
 
 	//lGamma = the probability of being in hidden state i at time t
-	TwoD_Matrix_D lGamma = TwoD_Matrix_D(lTimeIterations, lNumberOfHiddenStates);
+	MultidimensionalArray<double> lGamma(2, { lTimeIterations, lNumberOfHiddenStates });
 
 	//lEta = The probability of being in hidden state i at time t and hidden state j at time t+1
-	Array<Array<Array<double>>> lEta = Array<Array<Array<double>>>(lTimeIterations - 1);
+	MultidimensionalArray<double> lEta(3, { lTimeIterations - 1, lNumberOfHiddenStates, lNumberOfHiddenStates });
 
 	//lAlpha = The result of the forward algorithm at time t
-	Array<Array<double>> lAlpha = Array<Array<double>>(lTimeIterations);
+	MultidimensionalArray<double> lAlpha(2, { lTimeIterations, lNumberOfHiddenStates });
 
 	//lBeta = the result of the backward algorithm at time t+1
-	Array<Array<double>> lBeta = Array<Array<double>>(lTimeIterations);
+	MultidimensionalArray<double> lBeta(2, { lTimeIterations, lNumberOfHiddenStates });
 
 	//TransitionFrequency1 = the expected number of transitions from hidden state i
 	Array<double> TransitionFrequency1 = Array<double>(lNumberOfHiddenStates);
 
 	//TransitionFrequency2 = the expected number of transitions from hidden state i to hidden state j
-	TwoD_Matrix_D TransitionFrequency2 = TwoD_Matrix_D(lNumberOfHiddenStates, lNumberOfHiddenStates);
+	MultidimensionalArray<double> TransitionFrequency2 = MultidimensionalArray<double>(2, { lNumberOfHiddenStates, lNumberOfHiddenStates });
 
 	//lTransitionFrequency3 = the expected number of times in state i and observing symbol m
-	TwoD_Matrix_D lTransitionFrequency3 = TwoD_Matrix_D(lNumberOfHiddenStates, lNumberOfEmissionStates);
+	MultidimensionalArray<double> lTransitionFrequency3 = MultidimensionalArray<double>(2, { lNumberOfHiddenStates, lNumberOfEmissionStates });
 
 	Array<double> lFrequency4 = Array<double>(lNumberOfHiddenStates);
 
 	// The total probability of the total observation sequence happening
 	double lProbabilityOfObservationSequence = 0.0;
 
-	int test[2][3] = { { 1, 2, 3 }, { 1, 2, 3 } };
-
 	for (unsigned lTcount = 0; lTcount < lTimeIterations; lTcount++)
 	{
-		lAlpha.setElement(lTcount, ForwardAlgorithm(aObservations, aModelParameters, lTcount));
-		lBeta.setElement(lTcount, BackwardAlgorithm(aObservations, aModelParameters, lTcount));
+		lAlpha.setRow({ lTcount }, ForwardAlgorithm(aObservations, aModelParameters, lTcount));
+		lBeta.setRow({ lTcount }, BackwardAlgorithm(aObservations, aModelParameters, lTcount));
 	}
 	return HMMModelParameters();
 }

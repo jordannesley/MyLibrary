@@ -56,7 +56,7 @@ Array<double> GuassianMixtureModel::scaleData(const Array<double> aData, double*
 
 	calculateMaxAndMin(aData, aMax, aMin);
 
-	for (int lCount = 0; lCount < aData.getNumberOfElements(); lCount++)
+	for (unsigned lCount = 0; lCount < aData.getNumberOfElements(); lCount++)
 	{
 		lResult.setElement(lCount, (aData.getElement(lCount) - *aMin) / (*aMax - *aMin));
 	}
@@ -75,7 +75,7 @@ void GuassianMixtureModel::calculateMaxAndMin(const Array<double> aData, double*
 
 	double lTemp;
 
-	for (int lCount = 0; lCount < aData.getNumberOfElements(); lCount++)
+	for (unsigned lCount = 0; lCount < aData.getNumberOfElements(); lCount++)
 	{
 		lTemp = aData.getElement(lCount);
 		if (lTemp > *aMax) *aMax = lTemp;
@@ -109,18 +109,18 @@ double GuassianMixtureModel::calculateTau(const double& aIncrement)
 * @param aIncrement The increment parameter of GuassianMixtureModel.
 * @param aTau The tau parameter of GuassianMixtureModel.
 */
-TwoD_Matrix_D GuassianMixtureModel::calculateDiscreteStates(const Array<double> aData, const double& aMin, const int& aGMMStates, const double& aIncrement, const double& aTau)
+MultidimensionalArray<double> GuassianMixtureModel::calculateDiscreteStates(const Array<double> aData, const double& aMin, const unsigned& aGMMStates, const double& aIncrement, const double& aTau)
 {
 	double lLocation;
 	double temp;
-	TwoD_Matrix_D lResult = TwoD_Matrix_D(aData.getNumberOfElements(), aGMMStates);
+	MultidimensionalArray<double> lResult = MultidimensionalArray<double>(2, { aData.getNumberOfElements(), aGMMStates});
 	double lMax;
 
-	int lSelectedState = 0;
-	for (int lCount1 = 0; lCount1 < aData.getNumberOfElements(); lCount1++)
+	unsigned lSelectedState = 0;
+	for (unsigned lCount1 = 0; lCount1 < aData.getNumberOfElements(); lCount1++)
 	{
 		lMax = -DBL_MAX;
-		for (int lCount2 = 0; lCount2 < aGMMStates; lCount2++)
+		for (unsigned lCount2 = 0; lCount2 < aGMMStates; lCount2++)
 		{
 			// Calculate the location of the center of the guassian function (the peak)
 			lLocation = aMin + lCount2 * aIncrement;
@@ -136,7 +136,7 @@ TwoD_Matrix_D GuassianMixtureModel::calculateDiscreteStates(const Array<double> 
 		}
 
 		// set the selected state of the observation to 1.0
-		lResult.setElement(lCount1, lSelectedState, 1.0);
+		lResult.setElement({ lCount1, lSelectedState }, 1.0);
 	}
 
 	return lResult;
@@ -148,21 +148,21 @@ TwoD_Matrix_D GuassianMixtureModel::calculateDiscreteStates(const Array<double> 
 * @param aMax The min parameter.
 * @param aGMMStates The number of discrete states.
 */
-Array<double> GuassianMixtureModel::inverseGuassianMixtureModel(const TwoD_Matrix_D& aDiscreteStates, const double& aMax, const double& aMin, const int& aGMMStates)
+Array<double> GuassianMixtureModel::inverseGuassianMixtureModel(const MultidimensionalArray<double>& aDiscreteStates, const double& aMax, const double& aMin, const unsigned& aGMMStates)
 {
-	int lDataLength = aDiscreteStates.getRows();
+	unsigned lDataLength = aDiscreteStates.getNumberOfElementsOfDimension(0);
 	double lIncrement = GuassianMixtureModel::calculateIncrement(aMax, aMin, aGMMStates);
 
 	Array<double> lResult = Array<double>(lDataLength);
 
-	for (int lCount1 = 0; lCount1 < lDataLength; lCount1++)
+	for (unsigned lCount1 = 0; lCount1 < lDataLength; lCount1++)
 	{
 		lResult.setElement(lCount1, 0.0);
 
 		// combine the discrete states by calculating the expectation value for each row
-		for (int lCount2 = 0; lCount2 < aGMMStates; lCount2++)
+		for (unsigned lCount2 = 0; lCount2 < aGMMStates; lCount2++)
 		{
-			lResult.setElement(lCount1, lResult.getElement(lCount1) + (aMin + lIncrement * lCount2)*aDiscreteStates.getElement(lCount1, lCount2));
+			lResult.setElement(lCount1, lResult.getElement(lCount1) + (aMin + lIncrement * lCount2)*aDiscreteStates.getElement({ lCount1, lCount2}));
 		}
 	}
 
@@ -178,7 +178,7 @@ Array<double> GuassianMixtureModel::inverseGuassianMixtureModel() const
 
 /** Returns the discrete states
 */
-TwoD_Matrix_D GuassianMixtureModel::getStates() const
+MultidimensionalArray<double> GuassianMixtureModel::getStates() const
 {
 	return this->m_States;
 }

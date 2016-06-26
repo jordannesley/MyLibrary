@@ -6,7 +6,7 @@
 #ifndef GUASSIANMIXTUREMODEL_H
 #define GUASSIANMIXTUREMODEL_h
 
-#include "TwoD_Matrix.h"
+#include "MultidimensionalArray.h"
 #include "Array.h"
 
 /** A class that will take a continuous set of data and will turn it into a set of discrete states.
@@ -26,7 +26,7 @@ class GuassianMixtureModel
 		Array<double> m_InputData;
 		Array<double> m_ScaledData;
 
-		TwoD_Matrix_D m_States;
+		MultidimensionalArray<double> m_States;
 
 		const static double ZERO;
 
@@ -34,14 +34,14 @@ class GuassianMixtureModel
 		static void calculateMaxAndMin(const Array<double> aData, double* aMax, double* aMin);
 		static double calculateIncrement(const double& aMax, const double& aMin, const int& aGMMStates);
 		static double calculateTau(const double& aIncrement);
-		static TwoD_Matrix_D calculateDiscreteStates(const Array<double> aData, const double& aMin, const int& aGMMStates, const double& aIncrement, const double& aTau);
-		static Array<double> inverseGuassianMixtureModel(const TwoD_Matrix_D& aDiscreteStates, const double& aMax, const double& aMin, const int& aGMMStates);
+		static MultidimensionalArray<double> calculateDiscreteStates(const Array<double> aData, const double& aMin, const unsigned& aGMMStates, const double& aIncrement, const double& aTau);
+		static Array<double> inverseGuassianMixtureModel(const MultidimensionalArray<double>& aDiscreteStates, const double& aMax, const double& aMin, const unsigned& aGMMStates);
 		
 	public:
 		GuassianMixtureModel();
 		GuassianMixtureModel(const unsigned& aGMMStates, const Array<double> aData);
 		Array<double> inverseGuassianMixtureModel() const;
-		TwoD_Matrix_D getStates() const;
+		MultidimensionalArray<double> getStates() const;
 };
 
 #endif

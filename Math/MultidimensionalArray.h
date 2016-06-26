@@ -29,8 +29,8 @@ class MultidimensionalArray
 		unsigned getNumberOfElementsOfDimension(const unsigned aDimension) const;
 		Array<unsigned> getNumberOfElementsOfAllDimensions() const;
 
-		void setElement(const Array<unsigned> aCoordinates);
-
+		void setElement(const Array<unsigned> aCoordinates, const T aValue);
+		void setRow(const Array<unsigned> aCoordinatesOfRow, const Array<T> aValues);
 
 
 		enum Exeception
@@ -99,14 +99,7 @@ T MultidimensionalArray<T>::getElement(const Array<unsigned> aCoordinates) const
 {
 	if (aCoordinates.getNumberOfElements() != this->m_NumberOfDimensions) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
 
-	unsigned lElementPosition = aCoordinates.getElement(this->m_NumberOfDimensions-1);
-	unsigned lSkip = 1;
-	for (char lCount = this->m_NumberOfDimensions-2; lCount >= 0; lCount--)
-	{
-		if (aCoordinates.getElement(lCount) >= this->m_DimLengths.getElement(lCount)) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
-		lSkip = lSkip*this->m_DimLengths.getElement(lCount + 1);
-		lElementPosition = lElementPosition + aCoordinates.getElement(lCount) * lSkip;
-	}
+	unsigned lElementPosition = this->calculateElementPosition(aCoordinates);
 
 	return this->m_Elements.getElement(lElementPosition);
 }
@@ -148,6 +141,41 @@ void MultidimensionalArray<T>::setElement(const Array<unsigned> aCoordinates, co
 {
 	if (aCoordinates.getNumberOfElements() != this->m_NumberOfDimensions) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
 
+	unsigned lElementPosition = calculateElementPosition(aCoordinates);
+
+	this->m_Elements.setElement(lElementPosition, aValue);
+
+}
+
+/** Sets all the elements in a row
+* @param aCoordinates The coordinates of the row to set
+* @param aValues The new values of the row
+*/
+template<typename T>
+void MultidimensionalArray<T>::setRow(const Array<unsigned> aCoordinatesOfRow, const Array<T> aValues)
+{
+	// The length of aCoordinatesOfRow must equal the total number of dimensions - 1
+	if (aCoordinatesOfRow.getNumberOfElements() != this->m_NumberOfDimensions - 1) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
+
+	// the length of aValues must be the same length of the last dimension
+	if (aValues.getNumberOfElements() != this->getNumberOfElementsOfDimension(this->m_NumberOfDimensions - 1)) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
+
+	unsigned lStart = calculateElementPosition(aCoordinatesOfRow << Array<unsigned>{ 0 });
+	unsigned lEnd = calculateElementPosition(aCoordinatesOfRow << Array<unsigned>{this->m_DimLengths.getElement(this->m_NumberOfDimensions - 1)});
+
+
+	for (unsigned lCount = lStart; lCount < lEnd; lCount++)
+	{
+		this->m_Elements.setElement(lCount, aValues.getElement(lCount - lStart));
+	}
+}
+
+/** Calculates the position in m_Elements based on coordinates
+* @param aCoordinates the coordinates of the position
+*/
+template<typename T>
+unsigned MultidimensionalArray<T>::calculateElementPosition(const Array<unsigned> aCoordinates) const
+{
 	unsigned lElementPosition = aCoordinates.getElement(this->m_NumberOfDimensions - 1);
 	unsigned lSkip = 1;
 	for (char lCount = this->m_NumberOfDimensions - 2; lCount >= 0; lCount--)
@@ -156,8 +184,8 @@ void MultidimensionalArray<T>::setElement(const Array<unsigned> aCoordinates, co
 		lSkip = lSkip*this->m_DimLengths.getElement(lCount + 1);
 		lElementPosition = lElementPosition + aCoordinates.getElement(lCount) * lSkip;
 	}
-
-	this->m_Elements.setElement(lElementPosition, aValue);
+	return lElementPosition;
 }
+
 
 #endif
