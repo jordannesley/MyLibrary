@@ -101,6 +101,78 @@ void HMMModelParameters::setInitialDistributionMatrix(const Array<double>& aInit
 	m_InitialDistribution = aInitialDistribution;
 }
 
+/** Checks all the parameters of the HMM to make sure they make sense
+* @return The success of the check (True = all model parameters are good)
+*/
+bool HMMModelParameters::checkParameters() const
+{
+	bool lResult = true;
+	lResult = lResult && this->checkInitialDistribution() && this->checkTransitionMatrix() && this->checkEmissionMatrix();
+	return lResult;
+}
+
+/** Checks initial distribution of the HMM to make sure it makes sense
+* @return The success of the check (True = all model parameters are good)
+*/
+bool HMMModelParameters::checkInitialDistribution() const
+{
+	bool lResult;
+	double lSum = 0.0;
+	for (unsigned lCountN; lCountN < this->m_InitialDistribution.getNumberOfElements(); lCountN++)
+	{
+		lSum += this->m_InitialDistribution.getElement(lCountN);
+	}
+
+	lResult = (lSum > 0.9999 && lSum < 1.0001);
+	if (!lResult) DebugLogger::getInstance().logMessage(MessageLoggerType::Error, __FUNCTION__, "Initial Distribution does not make sense");
+
+	return (lSum > 0.9999 && lSum < 1.0001);
+}
+
+/** Checks emission matrix of the HMM to make sure it makes sense
+* @return The success of the check (True = all model parameters are good)
+*/
+bool HMMModelParameters::checkEmissionMatrix() const
+{
+	double lSum = 0.0;
+	bool lResult = true;
+	for (unsigned lCountN = 0; lCountN < this->m_EmissionMatrix.getNumberOfElementsOfDimension(0); lCountN++)
+	{
+		lSum = 0.0;
+		for (unsigned lCountM = 0; lCountM < this->m_EmissionMatrix.getNumberOfElementsOfDimension(1); lCountM++)
+		{
+			lSum += this->m_EmissionMatrix.getElement({ lCountN, lCountM });
+		}
+		lResult = lResult && ((lSum > .9999 && lSum < 1.0001) || (lSum == 0.0));
+	}
+
+	if (!lResult) DebugLogger::getInstance().logMessage(MessageLoggerType::Error, __FUNCTION__, "Emission Matrix does not make sense");
+
+	return lResult;
+}
+
+/** Checks transition matrix of the HMM to make sure it makes sense
+* @return The success of the check (True = all model parameters are good)
+*/
+bool HMMModelParameters::checkTransitionMatrix() const
+{
+	double lSum = 0.0;
+	bool lResult = true;
+	for (unsigned lCountN1 = 0; lCountN1 < this->m_TransitionMatrix.getNumberOfElementsOfDimension(0); lCountN1++)
+	{
+		lSum = 0.0;
+		for (unsigned lCountN2 = 0; lCountN2 < this->m_TransitionMatrix.getNumberOfElementsOfDimension(1); lCountN2++)
+		{
+			lSum += this->m_TransitionMatrix.getElement({ lCountN1, lCountN2 });
+		}
+
+		lResult = lResult && (lSum > .9999 && lSum < 1.0001);
+	}
+
+	if (!lResult) DebugLogger::getInstance().logMessage(MessageLoggerType::Error, __FUNCTION__, "Transition Matrix does not make sense");
+
+	return lResult;
+}
 
 
 

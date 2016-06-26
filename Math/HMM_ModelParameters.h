@@ -30,6 +30,10 @@ class HMMModelParameters
 		void setEmissionMatrix(const MultidimensionalArray<double>& aEmissionMatrix);
 		void setInitialDistributionMatrix(const Array<double>& aInitialDistribution);
 
+		bool checkParameters() const;
+		bool checkInitialDistribution() const;
+		bool checkEmissionMatrix() const;
+		bool checkTransitionMatrix() const;
 };
 
 #endif

@@ -188,23 +188,143 @@ HMMModelParameters HiddenMarkovModel::BaumWelchAlorithm(const MultidimensionalAr
 	MultidimensionalArray<double> lBeta(2, { lTimeIterations, lNumberOfHiddenStates });
 
 	//TransitionFrequency1 = the expected number of transitions from hidden state i
-	Array<double> TransitionFrequency1 = Array<double>(lNumberOfHiddenStates);
+	Array<double> TransitionFrequency1(lNumberOfHiddenStates);
 
 	//TransitionFrequency2 = the expected number of transitions from hidden state i to hidden state j
-	MultidimensionalArray<double> TransitionFrequency2 = MultidimensionalArray<double>(2, { lNumberOfHiddenStates, lNumberOfHiddenStates });
+	MultidimensionalArray<double> TransitionFrequency2(2, { lNumberOfHiddenStates, lNumberOfHiddenStates });
 
 	//lTransitionFrequency3 = the expected number of times in state i and observing symbol m
-	MultidimensionalArray<double> lTransitionFrequency3 = MultidimensionalArray<double>(2, { lNumberOfHiddenStates, lNumberOfEmissionStates });
+	MultidimensionalArray<double> lTransitionFrequency3(2, { lNumberOfHiddenStates, lNumberOfEmissionStates });
 
-	Array<double> lFrequency4 = Array<double>(lNumberOfHiddenStates);
+	Array<double> lFrequency4(lNumberOfHiddenStates);
 
 	// The total probability of the total observation sequence happening
 	double lProbabilityOfObservationSequence = 0.0;
 
+	double lHiddenStateEmission;
+
+	// calculate lAlpha and lBeta for all time iterations
 	for (unsigned lTcount = 0; lTcount < lTimeIterations; lTcount++)
 	{
 		lAlpha.setRow({ lTcount }, ForwardAlgorithm(aObservations, aModelParameters, lTcount));
 		lBeta.setRow({ lTcount }, BackwardAlgorithm(aObservations, aModelParameters, lTcount));
 	}
+
+	for (unsigned lTCount = 0; lTCount < lTimeIterations - 1; lTCount++)
+	{
+		lProbabilityOfObservationSequence = 0.0;
+		for (unsigned lCountN = 0; lCountN < lNumberOfHiddenStates; lCountN++)
+		{
+			lProbabilityOfObservationSequence += lAlpha.getElement({ lTCount, lCountN }) * lBeta.getElement({ lTCount, lCountN });
+		}
+
+		for (unsigned lCountN1 = 0; lCountN1 < lNumberOfHiddenStates; lCountN1++)
+		{
+			lGamma.setElement({ lTCount, lCountN1 }, (lAlpha.getElement({ lTCount, lCountN1 }) * lBeta.getElement({ lTCount, lCountN1 })) / lProbabilityOfObservationSequence);
+			for (unsigned lCountN2 = 0; lCountN2 < lNumberOfHiddenStates; lCountN2++)
+			{
+				lHiddenStateEmission = HiddenStateEmission(lCountN2, lTCount + 1, aObservations, aModelParameters.getEmissionMatrix());
+				lEta.setElement({ lTCount, lCountN1, lCountN2 }, lAlpha.getElement({ lTCount, lCountN1 }) * aModelParameters.getTransitionMatrix().getElement({ lCountN1, lCountN2 })*lHiddenStateEmission*lBeta.getElement({ lTCount + 1, lCountN2 }));
+				lEta.setElement({ lTCount, lCountN1, lCountN2 }, lEta.getElement({ lTCount, lCountN1, lCountN2 }) / lProbabilityOfObservationSequence);
+			}
+		}
+	}
+
+	//Calculate the last time iteration for lGamma
+	lProbabilityOfObservationSequence = 0.0;
+	for (unsigned lCountN = 0; lCountN < lNumberOfHiddenStates; lCountN++)
+	{
+		lProbabilityOfObservationSequence += lAlpha.getElement({ lTimeIterations - 1, lCountN }) *lBeta.getElement({ lTimeIterations - 1, lCountN });
+	}
+	for (unsigned lCountN = 0; lCountN < lNumberOfHiddenStates; lCountN++)
+	{
+		lGamma.setElement({ lTimeIterations - 1, lCountN }, (lAlpha.getElement({ lTimeIterations - 1, lCountN }) * lBeta.getElement({ lTimeIterations - 1, lCountN })) / lProbabilityOfObservationSequence);
+	}
+
+	//Calculate TransitionFrequency2, TransitionFrequency1
+	for (unsigned lCountN1 = 0; lCountN1 < lNumberOfHiddenStates; lCountN1++)
+	{
+		for (unsigned lCountN2 = 0; lCountN2 < lNumberOfHiddenStates; lCountN2++)
+		{
+			TransitionFrequency2.setElement({ lCountN1, lCountN2 }, 0.0);
+			for (unsigned lCountT = 0; lCountT < lTimeIterations - 1; lCountT++)
+			{
+				TransitionFrequency2.setElement({ lCountN1, lCountN2 }, TransitionFrequency2.getElement({ lCountN1, lCountN2 }) + lEta.getElement({ lCountT, lCountN1, lCountN2 }));
+				lFrequency4.setElement(lCountN1, lFrequency4.getElement(lCountN1) + lEta.getElement({ lCountT, lCountN1, lCountN2 }));
+			}
+		}
+	}
+
+	// Calculate TransitionFrequency1 and lTransitionFrequency3
+	for (unsigned lCountT = 0; lCountT < lTimeIterations; lCountT++)
+	{
+		for (unsigned lCountN = 0; lCountN < lNumberOfHiddenStates; lCountN++)
+		{
+			TransitionFrequency1.setElement(lCountN, TransitionFrequency1.getElement(lCountN) + lGamma.getElement({ lCountT, lCountN }));
+			for (unsigned lCountM = 0; lCountM < lNumberOfEmissionStates; lCountM++)
+			{
+				lTransitionFrequency3.setElement({ lCountN, lCountM }, lTransitionFrequency3.getElement({ lCountN, lCountM }) + lGamma.getElement({ lCountT, lCountN }) * aObservations.getElement({ lCountT, lCountM }));
+			}
+		}
+	}
+
+	//Calculate the new model parameters of the hidden markov model
+	Array<double> lNewInitialDistribution(lNumberOfHiddenStates);
+	MultidimensionalArray<double> lNewTransitionMatrix(2, { lNumberOfHiddenStates, lNumberOfHiddenStates });
+	MultidimensionalArray<double> lNewEmissionMatrix(2, { lNumberOfHiddenStates, lNumberOfEmissionStates });
+	for (unsigned lCountN1 = 0; lCountN1 < lNumberOfHiddenStates; lCountN1++)
+	{
+		lNewInitialDistribution.setElement(lCountN1, lGamma.getElement({ 0, lCountN1 }));
+		for (unsigned lCountN2 = 0; lCountN2 < lNumberOfHiddenStates; lCountN2++)
+		{
+			// if there are never any transisitons from the state then it can not transition to another state
+			if (lFrequency4.getElement(lCountN1) == 0.0)
+			{
+				lNewTransitionMatrix.setElement({ lCountN1, lCountN2 }, 0.0);
+			}
+			else
+			{
+				lNewTransitionMatrix.setElement({ lCountN1, lCountN2 }, TransitionFrequency2.getElement({ lCountN1, lCountN2 }) / lFrequency4.getElement(lCountN1));
+			}
+		}
+		for (unsigned lCountM = 0; lCountM < lNumberOfEmissionStates; lCountM++)
+		{
+			// if there are never any transitions from the state it can not emit an ovservation
+			if (TransitionFrequency1.getElement(lCountN1) == 0.0)
+			{
+				lNewEmissionMatrix.setElement({ lCountN1, lCountM }, 0.0);
+			}
+			else
+			{
+				lNewEmissionMatrix.setElement({ lCountN1, lCountM }, lTransitionFrequency3.getElement({ lCountN1, lCountM }) / TransitionFrequency1.getElement(lCountN1));
+			}
+		}
+	}
+
+
+	// if there a hidden state never transitions to another state (always transitions into itself) then use the previous state transitions for this state
+	// Note: We are avoiding a state always transitioning into itself because this leads to a convergence of all states transitioning into this state
+	for (unsigned lCount = 0; lCount < lNumberOfHiddenStates; lCount++)
+	{
+		double lSum = 0;
+		for (unsigned lCountN2 = 0; lCountN2 < lNumberOfHiddenStates; lCountN2++)
+		{
+			lSum += lNewTransitionMatrix.getElement({ lCount, lCountN2 });
+		}
+		if (lSum == 0.0)
+		{
+			for (unsigned lCountN2 = 0; lCountN2 < lNumberOfHiddenStates; lCountN2++)
+			{
+				lNewTransitionMatrix.setElement({ lCount, lCountN2 }, aModelParameters.getTransitionMatrix().getElement({ lCount, lCountN2 }));
+			}
+		}
+	}
+
+	// create the new model parameter object
+	HMMModelParameters lResult(lNewInitialDistribution, lNewTransitionMatrix, lNewEmissionMatrix);
+
+	// Check the new model parameters
+	if (!lResult.checkParameters()) DebugLogger::getInstance().logMessage(MessageLoggerType::Error, __FUNCTION__, "The new model parameters do not make sense");
+
 	return HMMModelParameters();
 }
