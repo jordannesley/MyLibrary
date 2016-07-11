@@ -4,9 +4,6 @@
 **/
 
 #include "GuassianMixtureModel.h"
-#include <algorithm>    // std::copy
-#include <float.h> //
-#include <math.h>
 
 const double GuassianMixtureModel::ZERO = 0.0000000000001;
 
@@ -101,7 +98,7 @@ double GuassianMixtureModel::calculateTau(const double& aIncrement)
 	return -pow(-aIncrement, 2.0) / log(GuassianMixtureModel::ZERO);
 }
 
-/** Calculates the discrete states
+/** Calculates the discrete statesn using hard clustering
 * @param aDataLength The length of the data to be scaled.
 * @param aData The scaled data to be scaled.
 * @param aMin The min parameter.

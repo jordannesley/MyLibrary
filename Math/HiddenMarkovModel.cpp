@@ -61,6 +61,80 @@ void HiddenMarkovModel::startTraining(const unsigned& aBaumWelchIterations, cons
 	}
 }
 
+/** Creates a sequence of observations based on the model parameters of the HMM
+* @param aModelParameters The model parameters of the hidden markov model
+* @param aTimeIterations The number of output states
+*/
+MultidimensionalArray<double> HiddenMarkovModel::OutputObservations(const HMMModelParameters aModelParameters, const unsigned aTimeIterations)
+{
+	MultidimensionalArray<double> lResult(2, { aTimeIterations, aModelParameters.getNumberOfEmissionStates() });
+	
+	Array<double> lHiddenStates = aModelParameters.getInitialDistribution();;
+	unsigned lTCount = 0;
+
+	// calculate the observations created at t=0
+	lResult.setRow({ 0 }, CalculateObservations(lHiddenStates, aModelParameters.getEmissionMatrix()));
+
+	// increment the time count
+	lTCount++;
+
+
+	while (lTCount < aTimeIterations)
+	{
+		Array<double> lTemp(aModelParameters.getNumberOfHiddenStates());
+		for (unsigned lCountN1 = 0; lCountN1 < aModelParameters.getNumberOfHiddenStates(); lCountN1++)
+		{
+			for (unsigned lCountN2 = 0; lCountN2 < aModelParameters.getNumberOfHiddenStates(); lCountN2++)
+			{
+				lTemp.setElement(lCountN1, lTemp.getElement(lCountN1) + aModelParameters.getTransitionMatrix().getElement({ lCountN2, lCountN1 })*lHiddenStates.getElement(lCountN2));
+			}
+		}
+		lHiddenStates = lTemp;
+		lResult.setRow({ lTCount }, CalculateObservations(lHiddenStates, aModelParameters.getEmissionMatrix()));
+		lTCount++;
+	}
+
+	return lResult;
+}
+
+/** Calculates the observation states at a single time instant
+* @param aHiddenState The hidden state distribution at the time instant
+* @param aEmissionMAtrix The emission matrix of the HMM
+* @comment Uses a hard clustering for the guassian mixture model
+*/
+Array<double> HiddenMarkovModel::CalculateObservations(Array<double> aHiddenState, MultidimensionalArray<double> aEmissionMatrix)
+{
+	unsigned lNumberOfEmissionStates = aEmissionMatrix.getNumberOfElementsOfDimension(1);
+	unsigned lNumberOfHiddenStates = aHiddenState.getNumberOfElements();
+
+	Array<double> lResult(lNumberOfEmissionStates);
+	Array<double> lTemp(lNumberOfEmissionStates);
+	double lMax = -DBL_MAX;
+	unsigned lSelectedState = 0;
+
+	for (unsigned lCountN = 0; lCountN < lNumberOfHiddenStates; lCountN++)
+	{
+		for (unsigned lCountM = 0; lCountM < lNumberOfEmissionStates; lCountM++)
+		{
+			lTemp.setElement(lCountM, lTemp.getElement(lCountM) + aHiddenState.getElement(lCountN)*aEmissionMatrix.getElement({ lCountN, lCountM }));
+		}
+	}
+
+	// perform the hard clustering
+	for (int lCount = 0; lCount < lNumberOfEmissionStates; lCount++)
+	{
+		if (lTemp.getElement(lCount) > lMax)
+		{
+			lMax = lTemp.getElement(lCount);
+			lSelectedState = lCount;
+		}
+	}
+
+	lResult.setElement(lSelectedState, 1.0);
+
+	return lResult;
+}
+
 /** The Forward Algorithm: Calculates the probability that a sequence of observations given the model parameters of the HMM
 * @param aObservations The discrete states of observations
 * @param aModelParameters The model parameters of the hidden markov model
@@ -169,6 +243,10 @@ double HiddenMarkovModel::HiddenStateEmission(const unsigned aCountN, const unsi
 	return lResult;
 }
 
+/** The Baum Welch Algorithm for the hidden markov model
+* @param aObservations The discrete states of observations
+* @param aModelParameters The hidden markov model parameters
+*/
 HMMModelParameters HiddenMarkovModel::BaumWelchAlorithm(const MultidimensionalArray<double> aObservations, const HMMModelParameters aModelParameters)
 {
 	unsigned lNumberOfHiddenStates = aModelParameters.getNumberOfHiddenStates();

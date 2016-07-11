@@ -8,6 +8,9 @@
 
 #include "MultidimensionalArray.h"
 #include "Array.h"
+#include <algorithm>    // std::copy
+#include <float.h> //DBL_MAX
+#include <math.h>
 
 /** A class that will take a continuous set of data and will turn it into a set of discrete states.
 *   The class uses hard clustering.
