@@ -4,7 +4,6 @@
 **/
 
 #include "DebugLogger.h"
-#include <iostream>
 
 static const char* WARNING_STRING = "WARNING";
 static const char* ERROR_STRING = "ERROR";

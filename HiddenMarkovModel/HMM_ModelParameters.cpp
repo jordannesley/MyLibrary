@@ -12,7 +12,7 @@ HMMModelParameters::HMMModelParameters()
 	m_NumberOfEmissionStates = 0;
 	m_NumberOfHiddenStates = 0;
 
-	m_InitialDistribution = Array<double>();
+	m_InitialDistribution = std::vector<double>();
 	m_TransitionMatrix = MultidimensionalArray<double>();
 	m_EmissionMatrix = MultidimensionalArray<double>();
 }
@@ -24,13 +24,12 @@ HMMModelParameters::HMMModelParameters()
 * @param aTransitionMatrix The transition matrix
 * @param aEmissionMatrix The emission matrix
 */
-HMMModelParameters::HMMModelParameters(const Array<double>& aInitialDistribution, const MultidimensionalArray<double>& aTransitionMatrix, const MultidimensionalArray<double>& aEmissionMatrix)
+HMMModelParameters::HMMModelParameters(const std::vector<double>& aInitialDistribution, const MultidimensionalArray<double>& aTransitionMatrix, const MultidimensionalArray<double>& aEmissionMatrix)
 {
-	unsigned lNumberOfHiddenStates = aInitialDistribution.getNumberOfElements();
-	unsigned lNumberOfEmissionStates = aEmissionMatrix.getNumberOfElementsOfDimension(1);
+	std::size_t lNumberOfHiddenStates = aInitialDistribution.size();
+	std::size_t lNumberOfEmissionStates = aEmissionMatrix.getNumberOfElementsOfDimension(1);
 
 	// check the input values
-	if (aInitialDistribution.getNumberOfElements() != lNumberOfHiddenStates && aInitialDistribution.getNumberOfElements() != 1) throw 69;
 	if (aTransitionMatrix.getNumberOfElementsOfDimension(0) != lNumberOfHiddenStates && aTransitionMatrix.getNumberOfElementsOfDimension(1) != lNumberOfHiddenStates) throw 69;
 	if (aEmissionMatrix.getNumberOfElementsOfDimension(0) != lNumberOfHiddenStates && aEmissionMatrix.getNumberOfElementsOfDimension(1) != lNumberOfEmissionStates) throw 69;
 
@@ -72,7 +71,7 @@ MultidimensionalArray<double> HMMModelParameters::getTransitionMatrix() const
 
 /** Returns the Initial Distribution
 */
-Array<double> HMMModelParameters::getInitialDistribution() const
+std::vector<double> HMMModelParameters::getInitialDistribution() const
 {
 	return m_InitialDistribution;
 }
@@ -96,7 +95,7 @@ void HMMModelParameters::setEmissionMatrix(const MultidimensionalArray<double>& 
 /** sets the initial distribution matrix
 * @param aInitialDistribution The new initial distribution matrix
 */
-void HMMModelParameters::setInitialDistributionMatrix(const Array<double>& aInitialDistribution)
+void HMMModelParameters::setInitialDistributionMatrix(const std::vector<double>& aInitialDistribution)
 {
 	m_InitialDistribution = aInitialDistribution;
 }
@@ -118,13 +117,13 @@ bool HMMModelParameters::checkInitialDistribution() const
 {
 	bool lResult;
 	double lSum = 0.0;
-	for (unsigned lCountN; lCountN < this->m_InitialDistribution.getNumberOfElements(); lCountN++)
+	for (unsigned lCountN = 0; lCountN < this->m_InitialDistribution.size(); lCountN++)
 	{
-		lSum += this->m_InitialDistribution.getElement(lCountN);
+		lSum += this->m_InitialDistribution[lCountN];
 	}
 
 	lResult = (lSum > 0.9999 && lSum < 1.0001);
-	if (!lResult) DebugLogger::getInstance().logMessage(MessageLoggerType::Error, __FUNCTION__, "Initial Distribution does not make sense");
+	if (!lResult) DebugLogger::getInstance().logMessage(DebugLogger::MessageLoggerType::Error, __FUNCTION__, "Initial Distribution does not make sense");
 
 	return (lSum > 0.9999 && lSum < 1.0001);
 }
@@ -146,7 +145,7 @@ bool HMMModelParameters::checkEmissionMatrix() const
 		lResult = lResult && ((lSum > .9999 && lSum < 1.0001) || (lSum == 0.0));
 	}
 
-	if (!lResult) DebugLogger::getInstance().logMessage(MessageLoggerType::Error, __FUNCTION__, "Emission Matrix does not make sense");
+	if (!lResult) DebugLogger::getInstance().logMessage(DebugLogger::MessageLoggerType::Error, __FUNCTION__, "Emission Matrix does not make sense");
 
 	return lResult;
 }
@@ -169,7 +168,7 @@ bool HMMModelParameters::checkTransitionMatrix() const
 		lResult = lResult && (lSum > .9999 && lSum < 1.0001);
 	}
 
-	if (!lResult) DebugLogger::getInstance().logMessage(MessageLoggerType::Error, __FUNCTION__, "Transition Matrix does not make sense");
+	if (!lResult) DebugLogger::getInstance().logMessage(DebugLogger::MessageLoggerType::Error, __FUNCTION__, "Transition Matrix does not make sense");
 
 	return lResult;
 }

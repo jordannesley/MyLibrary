@@ -12,8 +12,8 @@ const double GuassianMixtureModel::ZERO = 0.0000000000001;
 GuassianMixtureModel::GuassianMixtureModel()
 {
 	this->m_GMMStates = 0;
-	this->m_InputData = Array<double>();
-	this->m_ScaledData = Array<double>();
+	this->m_InputData = std::vector<double>();
+	this->m_ScaledData = std::vector<double>();
 	this->m_Min = 0.0;
 	this->m_Max = 0.0;
 }
@@ -22,10 +22,10 @@ GuassianMixtureModel::GuassianMixtureModel()
 * @param aGMMStates The number of states for the output.
 * @param aData The input data that will be sorted into discrete states.
 */
-GuassianMixtureModel::GuassianMixtureModel(const unsigned& aGMMStates, const Array<double> aData)
+GuassianMixtureModel::GuassianMixtureModel(const unsigned& aGMMStates, const std::vector<double> aData)
 {
 	this->m_GMMStates = aGMMStates;
-	this->m_DataLength = aData.getNumberOfElements();
+	this->m_DataLength = aData.size();
 	this->m_InputData = aData;
 
 	// calcualte the scaled data
@@ -47,15 +47,15 @@ GuassianMixtureModel::GuassianMixtureModel(const unsigned& aGMMStates, const Arr
 * @param aMax Will be returned with the maximum value of the data.
 * @param aMin Will be returned with the minimum value of the data.
 */
-Array<double> GuassianMixtureModel::scaleData(const Array<double> aData, double* aMax, double* aMin)
+std::vector<double> GuassianMixtureModel::scaleData(const std::vector<double> aData, double* aMax, double* aMin)
 {
-	Array<double> lResult = Array<double>(aData.getNumberOfElements());
+	std::vector<double> lResult = std::vector<double>(aData.size());
 
 	calculateMaxAndMin(aData, aMax, aMin);
 
-	for (unsigned lCount = 0; lCount < aData.getNumberOfElements(); lCount++)
+	for (unsigned lCount = 0; lCount < aData.size(); lCount++)
 	{
-		lResult.setElement(lCount, (aData.getElement(lCount) - *aMin) / (*aMax - *aMin));
+		lResult[lCount] = (aData[lCount] - *aMin) / (*aMax - *aMin);
 	}
 
 	return lResult;
@@ -65,16 +65,16 @@ Array<double> GuassianMixtureModel::scaleData(const Array<double> aData, double*
 * @param aMax Will be returned with the maximum value of the data.
 * @param aMin Will be returned with the minimum value of the data.
 */
-void GuassianMixtureModel::calculateMaxAndMin(const Array<double> aData, double* aMax, double* aMin)
+void GuassianMixtureModel::calculateMaxAndMin(const std::vector<double> aData, double* aMax, double* aMin)
 {
 	*aMax = -DBL_MAX;
 	*aMin = DBL_MAX;
 
 	double lTemp;
 
-	for (unsigned lCount = 0; lCount < aData.getNumberOfElements(); lCount++)
+	for (unsigned lCount = 0; lCount < aData.size(); lCount++)
 	{
-		lTemp = aData.getElement(lCount);
+		lTemp = aData[lCount];
 		if (lTemp > *aMax) *aMax = lTemp;
 		if (lTemp < *aMin) *aMin = lTemp;
 	}
@@ -106,15 +106,15 @@ double GuassianMixtureModel::calculateTau(const double& aIncrement)
 * @param aIncrement The increment parameter of GuassianMixtureModel.
 * @param aTau The tau parameter of GuassianMixtureModel.
 */
-MultidimensionalArray<double> GuassianMixtureModel::calculateDiscreteStates(const Array<double> aData, const double& aMin, const unsigned& aGMMStates, const double& aIncrement, const double& aTau)
+MultidimensionalArray<double> GuassianMixtureModel::calculateDiscreteStates(const std::vector<double> aData, const double& aMin, const unsigned& aGMMStates, const double& aIncrement, const double& aTau)
 {
 	double lLocation;
 	double temp;
-	MultidimensionalArray<double> lResult = MultidimensionalArray<double>(2, { aData.getNumberOfElements(), aGMMStates});
+	MultidimensionalArray<double> lResult(2, { aData.size(), aGMMStates });
 	double lMax;
 
 	unsigned lSelectedState = 0;
-	for (unsigned lCount1 = 0; lCount1 < aData.getNumberOfElements(); lCount1++)
+	for (unsigned lCount1 = 0; lCount1 < aData.size(); lCount1++)
 	{
 		lMax = -DBL_MAX;
 		for (unsigned lCount2 = 0; lCount2 < aGMMStates; lCount2++)
@@ -123,8 +123,8 @@ MultidimensionalArray<double> GuassianMixtureModel::calculateDiscreteStates(cons
 			lLocation = aMin + lCount2 * aIncrement;
 
 			// calculate the probability of the data point belonging to the Guassian Mixture Model State.
-			
-			temp = exp(-pow(lLocation - aData.getElement(lCount1), 2.0) / aTau);
+
+			temp = exp(-pow(lLocation - aData[lCount1], 2.0) / aTau);
 			if (temp > lMax)
 			{
 				lMax = temp;
@@ -145,21 +145,21 @@ MultidimensionalArray<double> GuassianMixtureModel::calculateDiscreteStates(cons
 * @param aMax The min parameter.
 * @param aGMMStates The number of discrete states.
 */
-Array<double> GuassianMixtureModel::inverseGuassianMixtureModel(const MultidimensionalArray<double>& aDiscreteStates, const double& aMax, const double& aMin, const unsigned& aGMMStates)
+std::vector<double> GuassianMixtureModel::inverseGuassianMixtureModel(const MultidimensionalArray<double>& aDiscreteStates, const double& aMax, const double& aMin, const unsigned& aGMMStates)
 {
 	unsigned lDataLength = aDiscreteStates.getNumberOfElementsOfDimension(0);
 	double lIncrement = GuassianMixtureModel::calculateIncrement(aMax, aMin, aGMMStates);
 
-	Array<double> lResult = Array<double>(lDataLength);
+	std::vector<double> lResult(lDataLength);
 
 	for (unsigned lCount1 = 0; lCount1 < lDataLength; lCount1++)
 	{
-		lResult.setElement(lCount1, 0.0);
+		lResult[lCount1] = 0.0;
 
 		// combine the discrete states by calculating the expectation value for each row
 		for (unsigned lCount2 = 0; lCount2 < aGMMStates; lCount2++)
 		{
-			lResult.setElement(lCount1, lResult.getElement(lCount1) + (aMin + lIncrement * lCount2)*aDiscreteStates.getElement({ lCount1, lCount2}));
+			lResult[lCount1] = lResult[lCount1] + (aMin + lIncrement * lCount2)*aDiscreteStates.getElement({ lCount1, lCount2 });
 		}
 	}
 
@@ -168,7 +168,7 @@ Array<double> GuassianMixtureModel::inverseGuassianMixtureModel(const Multidimen
 
 /** undoes the guassian mixture model and returns the an array of data
 */
-Array<double> GuassianMixtureModel::inverseGuassianMixtureModel() const
+std::vector<double> GuassianMixtureModel::inverseGuassianMixtureModel() const
 {
 	return GuassianMixtureModel::inverseGuassianMixtureModel(this->m_States, this->m_Max, this->m_Min, this->m_GMMStates);
 }
