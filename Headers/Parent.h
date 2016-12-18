@@ -37,7 +37,9 @@ class Parent
 		Parent Crossover(const Parent aMate, const unsigned aSeed) const;
 		void Randomize(const unsigned aSeed);
 
-		Parent& operator = (Parent& aRight);
+		Parent& operator = ( Parent& aRight);
+		Parent& operator = (Parent&& aRight);
 };
 
 #endif
+

@@ -13,6 +13,7 @@
 #include <vector>
 #include <tuple>
 #include <math.h>
+#include <cfloat>
 
 class GeneticAlgorithm
 {

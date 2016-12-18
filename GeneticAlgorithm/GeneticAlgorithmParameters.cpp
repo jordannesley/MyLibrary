@@ -100,3 +100,15 @@ std::vector<std::shared_ptr<ParentPropertyBase>> GeneticAlgorithmParameters::get
 {
 	return this->m_ParentTemplate;
 }
+
+/** Assignment operator
+* @param The right side of the = operator
+*/
+GeneticAlgorithmParameters& GeneticAlgorithmParameters::operator=(const GeneticAlgorithmParameters& aRight)
+{
+	this->m_ParentTemplate = aRight.m_ParentTemplate;
+	this->m_NumberOfParents = aRight.m_NumberOfParents;
+	this->m_RandomParentRatio = aRight.m_RandomParentRatio;
+	this->m_NumberOfGenerations = aRight.m_NumberOfGenerations;
+	return *this;
+}

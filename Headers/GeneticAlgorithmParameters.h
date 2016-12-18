@@ -28,6 +28,9 @@ class GeneticAlgorithmParameters
 		unsigned int getNumberOfParents() const;
 		double getRandomParentRatio() const;
 		std::vector<std::shared_ptr<ParentPropertyBase>> getParentTemplate();
+
+		GeneticAlgorithmParameters& operator=(const GeneticAlgorithmParameters& aRight);
+
 };
 
 #endif

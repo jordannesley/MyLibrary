@@ -31,11 +31,11 @@ void DebugLogger::setDebugFlag(bool aDebugFlag)
 
 	if (m_debugFlag)
 	{
-		lMessage = "Debug Flag Set True";
+		lMessage = (char*)"Debug Flag Set True";
 	}
 	else
 	{
-		lMessage = "Debug Flag Set False";
+		lMessage = (char*)"Debug Flag Set False";
 	}
 
 	DebugLogger::logMessage(MessageLoggerType::Information, __FUNCTION__, lMessage);

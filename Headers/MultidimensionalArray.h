@@ -16,27 +16,29 @@ class MultidimensionalArray
 private:
 	std::vector<T> m_Elements;
 	unsigned m_NumberOfDimensions;
-	std::vector<unsigned> m_DimLengths;
+	std::vector<unsigned long> m_DimLengths;
 	unsigned m_TotalNumberOfElements;
 
-	unsigned calculateElementPosition(const std::vector<unsigned> aCoordinates) const;
+	unsigned calculateElementPosition(const std::vector<unsigned long> aCoordinates) const;
 
 public:
 	MultidimensionalArray();
-	MultidimensionalArray(const unsigned aNumberOfDimensions, std::vector<unsigned> aNumberOfElementsOfAllDimensions, const std::vector<T> aElements);
-	MultidimensionalArray(const unsigned aNumberOfDimensions, const std::vector<unsigned>  aNumberOfElementsOfAllDimensions);
+	MultidimensionalArray(const unsigned long aNumberOfDimensions, std::vector<unsigned long> aNumberOfElementsOfAllDimensions, const std::vector<T> aElements);
+	MultidimensionalArray(const unsigned long aNumberOfDimensions, const std::vector<unsigned long>  aNumberOfElementsOfAllDimensions);
 
 	MultidimensionalArray(const MultidimensionalArray<T>& aCopy);
 	MultidimensionalArray(MultidimensionalArray<T>&& aMove);
 	~MultidimensionalArray() = default;
 
-	T getElement(const std::vector<unsigned> aCoordinates) const;
-	unsigned getTotalNumberOfElements() const;
-	unsigned getNumberOfElementsOfDimension(const unsigned aDimension) const;
-	std::vector<unsigned> getNumberOfElementsOfAllDimensions() const;
+	T getElement(const std::vector<unsigned long> aCoordinates) const;
+	unsigned long getTotalNumberOfElements() const;
+	unsigned long getNumberOfElementsOfDimension(const unsigned long aDimension) const;
+	std::vector<unsigned long> getNumberOfElementsOfAllDimensions() const;
 
-	void setElement(const std::vector<unsigned> aCoordinates, const T aValue);
-	void setRow(const std::vector<unsigned> aCoordinatesOfRow, const std::vector<T> aValues);
+	void setElement(const std::vector<unsigned long> aCoordinates, const T aValue);
+	void setRow(const std::vector<unsigned long> aCoordinatesOfRow, const std::vector<T> aValues);
+
+	MultidimensionalArray<T>& operator=(const MultidimensionalArray<T>& aRight);
 
 	enum Exeception
 	{
@@ -52,7 +54,7 @@ MultidimensionalArray<T>::MultidimensionalArray()
 {
 	this->m_Elements = std::vector<T>();
 	this->m_NumberOfDimensions = 0;
-	this->m_DimLengths = std::vector<unsigned>();
+	this->m_DimLengths = std::vector<unsigned long>();
 	this->m_TotalNumberOfElements = 0;
 }
 
@@ -62,12 +64,12 @@ MultidimensionalArray<T>::MultidimensionalArray()
 * @param aElements All the elements of the multidimensional array
 */
 template<typename T>
-MultidimensionalArray<T>::MultidimensionalArray(const unsigned aNumberOfDimensions, std::vector<unsigned> aNumberOfElementsOfAllDimensions, const std::vector<T> aElements)
+MultidimensionalArray<T>::MultidimensionalArray(const unsigned long aNumberOfDimensions, std::vector<unsigned long> aNumberOfElementsOfAllDimensions, const std::vector<T> aElements)
 {
 	this->m_TotalNumberOfElements = 1;
-	for (unsigned lCountDim = 0; lCountDim < aNumberOfDimensions; lCountDim++)
+	for (unsigned long lCountDim = 0; lCountDim < aNumberOfDimensions; lCountDim++)
 	{
-		this->m_TotalNumberOfElements = m_TotalNumberOfElements * aNumberOfElementsOfAllDimensions.getElement(lCountDim);
+		this->m_TotalNumberOfElements = m_TotalNumberOfElements * aNumberOfElementsOfAllDimensions[lCountDim];
 	}
 
 	if (this->m_TotalNumberOfElements != aElements.getNumberOfElements()) throw MultidimensionalArray::CONSTRUCTOR_EXCEPTION;
@@ -82,10 +84,10 @@ MultidimensionalArray<T>::MultidimensionalArray(const unsigned aNumberOfDimensio
 * @param aNumberOfElementsForDimensions An array of the lengths for each dimension
 */
 template<typename T>
-MultidimensionalArray<T>::MultidimensionalArray(const unsigned aNumberOfDimensions, std::vector<unsigned> aNumberOfElementsOfAllDimensions)
+MultidimensionalArray<T>::MultidimensionalArray(const unsigned long aNumberOfDimensions, std::vector<unsigned long> aNumberOfElementsOfAllDimensions)
 {
 	this->m_TotalNumberOfElements = 1;
-	for (unsigned lCountDim = 0; lCountDim < aNumberOfDimensions; lCountDim++)
+	for (unsigned long lCountDim = 0; lCountDim < aNumberOfDimensions; lCountDim++)
 	{
 		this->m_TotalNumberOfElements = m_TotalNumberOfElements * aNumberOfElementsOfAllDimensions[lCountDim];
 	}
@@ -129,11 +131,11 @@ MultidimensionalArray<T>::MultidimensionalArray(MultidimensionalArray&& aMove)
 * @return The element
 */
 template<typename T>
-T MultidimensionalArray<T>::getElement(const std::vector<unsigned> aCoordinates) const
+T MultidimensionalArray<T>::getElement(const std::vector<unsigned long> aCoordinates) const
 {
 	if (aCoordinates.size()!= this->m_NumberOfDimensions) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
 
-	unsigned lElementPosition = this->calculateElementPosition(aCoordinates);
+	unsigned long lElementPosition = this->calculateElementPosition(aCoordinates);
 
 	return this->m_Elements[lElementPosition];
 }
@@ -142,7 +144,7 @@ T MultidimensionalArray<T>::getElement(const std::vector<unsigned> aCoordinates)
 * @return The total number of elements
 */
 template<typename T>
-unsigned MultidimensionalArray<T>::getTotalNumberOfElements() const
+unsigned long MultidimensionalArray<T>::getTotalNumberOfElements() const
 {
 	return this->m_TotalNumberOfElements;
 }
@@ -151,7 +153,7 @@ unsigned MultidimensionalArray<T>::getTotalNumberOfElements() const
 * @return The total number of elements
 */
 template<typename T>
-unsigned MultidimensionalArray<T>::getNumberOfElementsOfDimension(const unsigned aDimension) const
+unsigned long MultidimensionalArray<T>::getNumberOfElementsOfDimension(const unsigned long aDimension) const
 {
 	if (aDimension > this->m_NumberOfDimensions) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
 
@@ -162,7 +164,7 @@ unsigned MultidimensionalArray<T>::getNumberOfElementsOfDimension(const unsigned
 * @return All the dimension lengths
 */
 template<typename T>
-std::vector<unsigned> MultidimensionalArray<T>::getNumberOfElementsOfAllDimensions() const
+std::vector<unsigned long> MultidimensionalArray<T>::getNumberOfElementsOfAllDimensions() const
 {
 	return this->m_DimLengths;
 }
@@ -171,11 +173,11 @@ std::vector<unsigned> MultidimensionalArray<T>::getNumberOfElementsOfAllDimensio
 * @param aCoordinates The coordinates for the element
 */
 template<typename T>
-void MultidimensionalArray<T>::setElement(const std::vector<unsigned> aCoordinates, const T aValue)
+void MultidimensionalArray<T>::setElement(const std::vector<unsigned long> aCoordinates, const T aValue)
 {
 	if (aCoordinates.size() != this->m_NumberOfDimensions) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
 
-	unsigned lElementPosition = calculateElementPosition(aCoordinates);
+	unsigned long lElementPosition = calculateElementPosition(aCoordinates);
 
 	this->m_Elements[lElementPosition] = aValue;
 
@@ -186,7 +188,7 @@ void MultidimensionalArray<T>::setElement(const std::vector<unsigned> aCoordinat
 * @param aValues The new values of the row
 */
 template<typename T>
-void MultidimensionalArray<T>::setRow(const std::vector<unsigned> aCoordinatesOfRow, const std::vector<T> aValues)
+void MultidimensionalArray<T>::setRow(const std::vector<unsigned long> aCoordinatesOfRow, const std::vector<T> aValues)
 {
 	// The length of aCoordinatesOfRow must equal the total number of dimensions - 1
 	if (aCoordinatesOfRow.size() != this->m_NumberOfDimensions - 1) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
@@ -194,30 +196,42 @@ void MultidimensionalArray<T>::setRow(const std::vector<unsigned> aCoordinatesOf
 	// the length of aValues must be the same length of the last dimension
 	if (aValues.size() != this->getNumberOfElementsOfDimension(this->m_NumberOfDimensions - 1)) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
 
-	std::vector<unsigned>lStartCoordinates(aCoordinatesOfRow);
+	std::vector<unsigned long>lStartCoordinates(aCoordinatesOfRow);
 	lStartCoordinates.push_back(0);
 
-	std::vector<unsigned>lEndCoordinates(aCoordinatesOfRow);
+	std::vector<unsigned long>lEndCoordinates(aCoordinatesOfRow);
 	lEndCoordinates.push_back(this->m_DimLengths[this->m_NumberOfDimensions - 1]);
 
-	unsigned lStart = calculateElementPosition(lStartCoordinates);
-	unsigned lEnd = calculateElementPosition(lEndCoordinates);
+	unsigned long lStart = calculateElementPosition(lStartCoordinates);
+	unsigned long lEnd = calculateElementPosition(lEndCoordinates);
 
-	for (unsigned lCount = lStart; lCount < lEnd; lCount++)
+	for (unsigned long lCount = lStart; lCount < lEnd; lCount++)
 	{
 		this->m_Elements[lCount] = aValues[lCount - lStart];
 	}
+}
+
+/** Assingment operator
+* @param aRight The right side of the = operator
+*/
+template<typename T>
+MultidimensionalArray<T>& MultidimensionalArray<T>::operator=(const MultidimensionalArray& aRight)
+{
+	this->m_Elements = aRight.m_Elements;
+	this->m_DimLengths = aRight.m_DimLengths;
+	this->m_NumberOfDimensions = aRight.m_NumberOfDimensions;
+	this->m_TotalNumberOfElements = aRight.m_TotalNumberOfElements;
 }
 
 /** Calculates the position in m_Elements based on coordinates
 * @param aCoordinates the coordinates of the position
 */
 template<typename T>
-unsigned MultidimensionalArray<T>::calculateElementPosition(const std::vector<unsigned> aCoordinates) const
+unsigned MultidimensionalArray<T>::calculateElementPosition(const std::vector<unsigned long> aCoordinates) const
 {
-	unsigned lElementPosition = aCoordinates[this->m_NumberOfDimensions - 1];
-	unsigned lSkip = 1;
-	for (char lCount = this->m_NumberOfDimensions - 2; lCount >= 0; lCount--)
+	unsigned long lElementPosition = aCoordinates[this->m_NumberOfDimensions - 1];
+	unsigned long lSkip = 1;
+	for (unsigned long lCount = this->m_NumberOfDimensions - 2; lCount >= 0; lCount--)
 	{
 		if (aCoordinates[lCount] >= this->m_DimLengths[lCount]) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
 		lSkip = lSkip*this->m_DimLengths[lCount + 1];

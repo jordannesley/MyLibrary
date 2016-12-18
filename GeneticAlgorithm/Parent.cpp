@@ -160,3 +160,12 @@ Parent& Parent::operator = (Parent& aRight)
 
 	return *this;
 }
+
+Parent& Parent::operator= (Parent&& aRight)
+{	
+	this->m_Fitness = std::move(aRight.m_Fitness);
+	this->m_ParentProperties = std::move(aRight.m_ParentProperties);
+
+	aRight.m_Fitness = 0.0;
+	aRight.m_ParentProperties.clear();
+}
