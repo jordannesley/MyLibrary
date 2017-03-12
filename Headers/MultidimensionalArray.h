@@ -221,6 +221,7 @@ MultidimensionalArray<T>& MultidimensionalArray<T>::operator=(const Multidimensi
 	this->m_DimLengths = aRight.m_DimLengths;
 	this->m_NumberOfDimensions = aRight.m_NumberOfDimensions;
 	this->m_TotalNumberOfElements = aRight.m_TotalNumberOfElements;
+	return *this;
 }
 
 /** Calculates the position in m_Elements based on coordinates

@@ -10,7 +10,7 @@
 Parent::Parent()
 {
 	this->m_Fitness = 0.0;
-	this->m_Rank = 0.0;
+	this->m_Rank = 0;
 	this->m_ParentProperties = std::vector<std::unique_ptr<ParentPropertyBase>>();
 }
 
@@ -20,7 +20,7 @@ Parent::Parent()
 Parent::Parent(std::vector<std::shared_ptr<ParentPropertyBase>> aParentProperties)
 {
 	this->m_Fitness = 0.0;
-	this->m_Rank = 0.0;
+	this->m_Rank = 0;
 	this->m_ParentProperties = std::vector<std::unique_ptr<ParentPropertyBase>>(aParentProperties.size());
 	for (unsigned lCount = 0; lCount < this->m_ParentProperties.size(); lCount++)
 	{
@@ -168,4 +168,5 @@ Parent& Parent::operator= (Parent&& aRight)
 
 	aRight.m_Fitness = 0.0;
 	aRight.m_ParentProperties.clear();
+	return *this;
 }
