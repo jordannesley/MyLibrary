@@ -9,6 +9,10 @@
 #include <vector>
 #include <memory>
 
+#pragma unmanaged
+
+enum PropertyType { Double };
+
 class ParentPropertyBase
 {
 	public:
@@ -18,9 +22,11 @@ class ParentPropertyBase
 
 		virtual ParentPropertyBase* Clone() = 0;
 
+		virtual PropertyType Type() = 0;
 
 		virtual ParentPropertyBase* Crossover(const ParentPropertyBase * const aParentProperty, const unsigned aSeed) const = 0;
 		virtual void Randomize(const unsigned aSeed) = 0;
 };
+
 
 #endif

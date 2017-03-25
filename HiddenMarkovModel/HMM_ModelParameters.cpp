@@ -5,6 +5,8 @@
 
 #include "HMM_ModelParameters.h"
 
+#pragma unmanaged
+
 /** Default constructor for HMMModelParameters
 */
 HMMModelParameters::HMMModelParameters()

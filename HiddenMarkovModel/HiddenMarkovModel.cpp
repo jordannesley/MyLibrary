@@ -6,6 +6,7 @@
 
 #include "HiddenMarkovModel.h"
 
+#pragma unmanaged
 
 /** Constructor of the hidden markov model
 */

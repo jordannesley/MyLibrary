@@ -5,6 +5,8 @@
 
 #include "DebugLogger.h"
 
+#pragma unmanaged
+
 static const char* WARNING_STRING = "WARNING";
 static const char* ERROR_STRING = "ERROR";
 static const char* INFORMATION_STRING = "INFORMATION";

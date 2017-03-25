@@ -5,16 +5,18 @@
 
 #include "GeneticAlgorithm.h"
 
+#pragma unmanaged
+
 /** Constructor for Genetic Algorithm.
 * @param aSeed The seed number to use for randomization.
 * @param aGAParameters The parameters that define the genetic algorithm.
 * @param aFunction The function that defines the fitness for each parent.
 */
-GeneticAlgorithm::GeneticAlgorithm(const unsigned int aSeed, const GeneticAlgorithmParameters aGAParameters, double(*aFunction)(std::vector<std::unique_ptr<ParentPropertyBase>>&&))
+GeneticAlgorithm::GeneticAlgorithm(const unsigned int aSeed, const GeneticAlgorithmParameters aGAParameters, UNMANAGED_FITNESS_FUNCTION aFitnessFunction)
 {
 	this->m_Seed = aSeed;
 	this->m_GAParameters = aGAParameters;
-	this->Function = aFunction;
+	this->m_Function = aFitnessFunction;
 
 	this->m_BestParent = Parent();
 	this->m_BestParent.setFitness(DBL_MAX);
@@ -35,7 +37,7 @@ void GeneticAlgorithm::Start()
 	{
 		for (unsigned lParentCount = 0; lParentCount < this->m_ParentArray.size(); lParentCount++)
 		{
-			this->m_ParentArray[lParentCount].setFitness(this->Function(this->m_ParentArray[lParentCount].getProperties()));
+			this->m_ParentArray[lParentCount].setFitness(this->m_Function(this->m_ParentArray[lParentCount].getProperties()));
 		}
 
 		rankParents(this->m_ParentArray);
@@ -88,7 +90,7 @@ std::vector<Parent> GeneticAlgorithm::breed(const std::vector<Parent>& aParentAr
 	std::vector<Parent> lNewGeneration(aParentArray.size());
 	std::vector<std::tuple<unsigned, unsigned>> lCouple(aParentArray.size());
 	double lSum = pow(aParentArray.size(), 2.0);
-	double temp;
+
 	std::vector<double> lRandomNumbers1 = Utilities::RandomNumber(aSeed++, aParentArray.size(), 0.0, lSum);
 	std::vector<double> lRandomNumbers2 = Utilities::RandomNumber(aSeed++, aParentArray.size(), 0.0, lSum);
 
@@ -124,4 +126,12 @@ std::vector<Parent> GeneticAlgorithm::breed(const std::vector<Parent>& aParentAr
 	}
 
 	return lNewGeneration;
+}
+
+/** Returns the best parent of the genetic algorithm
+* @return The best parent
+*/
+Parent GeneticAlgorithm::GetBestParent()
+{
+	return this->m_BestParent;
 }

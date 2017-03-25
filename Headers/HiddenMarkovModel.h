@@ -14,6 +14,8 @@
 #include "DebugLogger.h"
 #include <float.h> // DBL_MAX;
 
+#pragma unmanaged
+
 class HiddenMarkovModel
 {
 private:

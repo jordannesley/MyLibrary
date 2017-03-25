@@ -7,6 +7,7 @@
 #define GENETICALGORITHMPARAMETERS_H
 
 #include "ParentPropertyBase.h"
+#pragma unmanaged
 
 class GeneticAlgorithmParameters
 {

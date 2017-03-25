@@ -9,6 +9,8 @@
 #include "DebugLogger.h"
 #include <vector>
 
+#pragma unmanaged
+
 class HMMModelParameters
 {
 private:

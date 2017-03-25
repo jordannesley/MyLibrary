@@ -5,6 +5,8 @@
 
 #include "GeneticAlgorithmParameters.h"
 
+#pragma unmanaged
+
 /** Default Constructor for GeneticAlgorithmParameters.
 */
 GeneticAlgorithmParameters::GeneticAlgorithmParameters()

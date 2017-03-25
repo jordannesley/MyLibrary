@@ -10,6 +10,8 @@
 #include "Utilities.h"
 #include "DebugLogger.h"
 
+#pragma unmanaged
+
 class ParentPropertyDouble : public ParentPropertyBase
 {
 	private:
@@ -26,6 +28,7 @@ class ParentPropertyDouble : public ParentPropertyBase
 		~ParentPropertyDouble() override;
 
 		ParentPropertyBase* Clone() override;
+		PropertyType Type() override;
 
 		double getValue() const;
 		double getMax() const;

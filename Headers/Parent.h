@@ -11,6 +11,8 @@
 #include <vector>
 #include <memory> // std::shared_ptr
 
+#pragma unmanaged
+
 class Parent
 {
 	private:

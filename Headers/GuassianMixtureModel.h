@@ -13,6 +13,8 @@
 #include <float.h> //DBL_MAX
 #include <math.h>
 
+#pragma unmanaged
+
 /** A class that will take a continuous set of data and will turn it into a set of discrete states.
 *   The class uses hard clustering.
 */

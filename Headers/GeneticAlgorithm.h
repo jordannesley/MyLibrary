@@ -15,6 +15,10 @@
 #include <math.h>
 #include <cfloat>
 
+#pragma unmanaged
+
+typedef double(__stdcall *UNMANAGED_FITNESS_FUNCTION)(std::vector<std::unique_ptr<ParentPropertyBase>>&& aParentProperties);
+
 class GeneticAlgorithm
 {
 private:
@@ -24,15 +28,17 @@ private:
 	GeneticAlgorithmParameters m_GAParameters;
 
 	//The function to test
-	double(*Function)(std::vector<std::unique_ptr<ParentPropertyBase>>&&);
+	UNMANAGED_FITNESS_FUNCTION m_Function;
 
 	void static rankParents(std::vector<Parent>& aParentArray);
 	std::vector<Parent> static breed(const std::vector<Parent>& aParentArray, unsigned aSeed);
 
 	public:
-		GeneticAlgorithm(const unsigned int aSeed, const GeneticAlgorithmParameters aGAParameters, double(*aFunction)(std::vector<std::unique_ptr<ParentPropertyBase>>&&));
-		
+		GeneticAlgorithm(const unsigned int aSeed, const GeneticAlgorithmParameters aGAParameters, UNMANAGED_FITNESS_FUNCTION aFitnessFunction);
+
 		void Start();
+
+		Parent GetBestParent();
 };
 
 #endif

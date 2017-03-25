@@ -5,6 +5,8 @@
 
 #include "Utilities.h"
 
+#pragma unmanaged
+
 /** Calculates the absolute value of the number.
 * @param A The number.
 * @return The absolute value of the number.

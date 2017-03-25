@@ -5,6 +5,8 @@
 
 #include "GuassianMixtureModel.h"
 
+#pragma unmanaged
+
 const double GuassianMixtureModel::ZERO = 0.0000000000001;
 
 /** Defualt constructor for GuassianMixtureModel

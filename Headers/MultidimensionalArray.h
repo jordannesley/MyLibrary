@@ -10,6 +10,8 @@
 #include <vector>
 #include <utility> //std::move
 
+#pragma unmanaged
+
 template<typename T>
 class MultidimensionalArray
 {

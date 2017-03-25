@@ -5,6 +5,8 @@
 
 #include "Parent.h"
 
+#pragma unmanaged
+
 /** Default Constructor for Parent.
 */
 Parent::Parent()

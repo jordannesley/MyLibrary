@@ -5,6 +5,8 @@
 
 #include "ParentPropertyDouble.h"
 
+#pragma unmanaged
+
 /** Default constructor for ParentPropertyDouble.
 */
 ParentPropertyDouble::ParentPropertyDouble()
@@ -61,6 +63,13 @@ ParentPropertyBase* ParentPropertyDouble::Clone()
 	return new ParentPropertyDouble(*this);
 }
 
+/** Returns the type of parent property
+*/
+PropertyType ParentPropertyDouble::Type()
+{
+	return PropertyType::Double;
+}
+
 /** Returns the value of the property.
 */
 double ParentPropertyDouble::getValue() const
@@ -82,10 +91,10 @@ double ParentPropertyDouble::getMin() const
 	return this->m_MinValue;
 }
 
-/** Constructor for ParentPropertyDouble.
-* @param aParent A Parent to cross with.
-* @param aSeed The maximum value that the property can have.
-* @return A new property that has been crossed between the two parents. 
+/** Perform the crossing of the two properties.
+* @param aParentProperty The property to cross with
+* @param aSeed The seed for the random number generator
+* @return A new property that has been crossed between the two parents.
 */
 ParentPropertyBase* ParentPropertyDouble::Crossover(const ParentPropertyBase * const aParentProperty, const unsigned aSeed) const
 {
