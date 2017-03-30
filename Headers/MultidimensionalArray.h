@@ -36,6 +36,7 @@ public:
 	unsigned long getTotalNumberOfElements() const;
 	unsigned long getNumberOfElementsOfDimension(const unsigned long aDimension) const;
 	std::vector<unsigned long> getNumberOfElementsOfAllDimensions() const;
+	std::vector<T> getRow(const std::vector<unsigned long> aCoordinatesOfRow) const;
 
 	void setElement(const std::vector<unsigned long> aCoordinates, const T aValue);
 	void setRow(const std::vector<unsigned long> aCoordinatesOfRow, const std::vector<T> aValues);
@@ -74,7 +75,7 @@ MultidimensionalArray<T>::MultidimensionalArray(const unsigned long aNumberOfDim
 		this->m_TotalNumberOfElements = m_TotalNumberOfElements * aNumberOfElementsOfAllDimensions[lCountDim];
 	}
 
-	if (this->m_TotalNumberOfElements != aElements.getNumberOfElements()) throw MultidimensionalArray::CONSTRUCTOR_EXCEPTION;
+	if (this->m_TotalNumberOfElements != aElements.size()) throw MultidimensionalArray::CONSTRUCTOR_EXCEPTION;
 
 	this->m_Elements = aElements;
 	this->m_NumberOfDimensions = aNumberOfDimensions;
@@ -171,6 +172,34 @@ std::vector<unsigned long> MultidimensionalArray<T>::getNumberOfElementsOfAllDim
 	return this->m_DimLengths;
 }
 
+/** Returns the all the values for a given row
+* @return The elements of a given row
+*/
+template<typename T>
+std::vector<T> MultidimensionalArray<T>::getRow(const std::vector<unsigned long> aCoordinatesOfRow) const
+{
+	// The length of aCoordinatesOfRow must equal the total number of dimensions - 1
+	if (aCoordinatesOfRow.size() != this->m_NumberOfDimensions - 1) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
+
+	// calculate the start and ending positions of a row
+	std::vector<unsigned long>lStartCoordinates(aCoordinatesOfRow);
+	lStartCoordinates.push_back(0);
+
+	std::vector<unsigned long>lEndCoordinates(aCoordinatesOfRow);
+	lEndCoordinates.push_back(this->m_DimLengths[this->m_NumberOfDimensions - 1]);
+
+	// calculate the vector positions of the start and end coordinates
+	unsigned long lStart = calculateElementPosition(lStartCoordinates);
+	unsigned long lEnd = calculateElementPosition(lEndCoordinates);
+
+	std::vector<T> lResult(this->m_DimLengths[this->m_NumberOfDimensions - 1]);
+	for (unsigned long lCount = lStart; lCount < lEnd; lCount++)
+	{
+		 lResult[lCount - lStart] = this->m_Elements[lCount];
+	}
+	return lResult;
+}
+
 /** Sets the element located at the coordinates
 * @param aCoordinates The coordinates for the element
 */
@@ -182,7 +211,6 @@ void MultidimensionalArray<T>::setElement(const std::vector<unsigned long> aCoor
 	unsigned long lElementPosition = calculateElementPosition(aCoordinates);
 
 	this->m_Elements[lElementPosition] = aValue;
-
 }
 
 /** Sets all the elements in a row
@@ -198,12 +226,14 @@ void MultidimensionalArray<T>::setRow(const std::vector<unsigned long> aCoordina
 	// the length of aValues must be the same length of the last dimension
 	if (aValues.size() != this->getNumberOfElementsOfDimension(this->m_NumberOfDimensions - 1)) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
 
+	// calculate the start and ending positions of a row
 	std::vector<unsigned long>lStartCoordinates(aCoordinatesOfRow);
 	lStartCoordinates.push_back(0);
 
 	std::vector<unsigned long>lEndCoordinates(aCoordinatesOfRow);
 	lEndCoordinates.push_back(this->m_DimLengths[this->m_NumberOfDimensions - 1]);
 
+	// calculate the vector positions of the start and end coordinates
 	unsigned long lStart = calculateElementPosition(lStartCoordinates);
 	unsigned long lEnd = calculateElementPosition(lEndCoordinates);
 
@@ -234,7 +264,7 @@ unsigned MultidimensionalArray<T>::calculateElementPosition(const std::vector<un
 {
 	unsigned long lElementPosition = aCoordinates[this->m_NumberOfDimensions - 1];
 	unsigned long lSkip = 1;
-	for (unsigned long lCount = this->m_NumberOfDimensions - 2; lCount >= 0; lCount--)
+	for (long lCount = this->m_NumberOfDimensions - 2; lCount >= 0; lCount--)
 	{
 		if (aCoordinates[lCount] >= this->m_DimLengths[lCount]) throw MultidimensionalArray::DIMENSIONS_DONT_MATCH;
 		lSkip = lSkip*this->m_DimLengths[lCount + 1];
