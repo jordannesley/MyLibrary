@@ -1,3 +1,7 @@
+/**
+*  @file    Graph_Node.h
+*  @author  Jordan Nesley
+**/
 
 #ifndef NODE_H
 #define NODE_H

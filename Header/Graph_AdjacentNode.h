@@ -1,3 +1,7 @@
+/**
+*  @file    Graph_AdjacentNode.h
+*  @author  Jordan Nesley
+**/
 
 #ifndef ADJNODE_H
 #define ADJNODE_H
