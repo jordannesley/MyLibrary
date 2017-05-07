@@ -10,6 +10,7 @@
 #include "Utilities.h"
 #include <list>
 #include <algorithm>
+#include <tuple>
 #include <math.h>
 
 namespace MyLibrary
@@ -25,17 +26,25 @@ namespace MyLibrary
 	private:
 		struct Circle
 		{
-			double radius;
-			Position center;
+			double Radius;
+			Position Center;
 		};
 
-		static Graph<Position, int> FortuneAlgorithm(std::list<Position>& aPolygonCenters,  const Position aMaxPosition, const Position aMinPosition, const double aSweepIncrement);
+		std::vector<unsigned> m_ParabolaList;
+		std::vector<Position> m_PolygonCenters;
+		Graph<Position, int> m_Graph;
+		Position m_MaxPosition;
+		Position m_MinPosition;
+		
 		static Circle CreateCircle(const Position& a, const Position& b, const Position& c);
-		static int ParabolicIntersections(const Position& a, const Position&b, Position& aIntersection1, Position& aIntersection2);
+		static int getIntersections(const MyLibrary::Position& aPosition1, const MyLibrary::Position& aPosition2, const double& aSweep, MyLibrary::Position& aIntersection1, MyLibrary::Position& aIntersection2);
+		static double calculateDeterminant(const MyLibrary::Position& aA, const MyLibrary::Position& aB, const MyLibrary::Position& aC);
 	public:
-	
-		static Graph<Position, int> CreateDiagram(const unsigned aNumberOfPolygons, const unsigned aSeed, const Position aMaxPosition, const Position aMinPosition, const double aSweepIncrement);
-		static Graph<Position, int> CreateDiagram(const unsigned aNumberOfPolygons, const unsigned aSeed, const Position aMaxPosition, const Position aMinPosition);
+		
+		VoronoiDiagram();
+		VoronoiDiagram(const std::vector<Position>& aPolygonCenters, const Position& aMaxPosition, const Position& aMinPosition);
+
+		void CreateDiagram();
 	};
 }
 
