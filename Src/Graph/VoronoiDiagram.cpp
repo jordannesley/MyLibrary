@@ -17,166 +17,287 @@ MyLibrary::VoronoiDiagram::VoronoiDiagram()
 
 /** Concstructor of VoronoiDiagram
 * @param aPolygonCenters The number points that define the center of each polygon
-* @param aMaxPosition The max x and y coordinates (the upper right corner of the rectangle)
-* @param aMinPosition The min x and y coordinates (the bottom left corner of the rectangle)
 */
-MyLibrary::VoronoiDiagram::VoronoiDiagram(const std::vector<Position>& aPolygonCenters, const Position& aMaxPosition, const Position& aMinPosition)
+MyLibrary::VoronoiDiagram::VoronoiDiagram(const std::vector<Position>& aPolygonCenters)
 {
-	m_ParabolaList = std::vector<unsigned>();
+	m_ParabolaList = std::list<unsigned>();
 	m_PolygonCenters = aPolygonCenters;
 }
 
 /** The Fortune Algorithm
-* @param aPolygonCenters The centers of the polygons
-* @param aMaxPosition The max x and y coordinates (the upper right corner of the rectangle)
-* @param aMinPosition The min x and y coordinates (the bottom left corner of the rectangle)
-* @param aSweepIncrement The increment that the sweep line moves. This will affect the accuracy of the polygons centers and intersections but will slow down the algorithm
 */
 void MyLibrary::VoronoiDiagram::CreateDiagram()
 {
-	m_ParabolaList = std::vector<unsigned>(3);
-	std::list<std::tuple<unsigned, unsigned, unsigned>> lEdgeTracker = std::list<std::tuple<unsigned, unsigned, unsigned>>();
+	m_ParabolaList = std::list<unsigned>();
+	m_EdgeTracker = std::list<EdgeTracker>();
 
 	//Sort the Polygon centers based on their x coordinates
 	//lPolygonCenters.sort([](const Position& a, const Position& b)->bool {return a.Y < b.Y; });
 	std::sort(m_PolygonCenters.begin(), m_PolygonCenters.end(), [](const Position& a, const Position& b)->bool {return a.Y > b.Y; });
 
-	m_ParabolaList[0] = 0;
-	m_ParabolaList[1] = 1;
-	m_ParabolaList[0] = 0;
+	m_ParabolaList.insert(m_ParabolaList.begin(), 0);
+	m_ParabolaList.insert(m_ParabolaList.begin(), 1);
+	m_ParabolaList.insert(m_ParabolaList.begin(), 0);
 	unsigned lCurrent = 2;
-	std::vector<unsigned>::iterator it;
-	
+
 	while (lCurrent < m_PolygonCenters.size())
 	{
 		double lSweepLine = m_PolygonCenters[lCurrent].Y;
 
-		// Process any circle events
-		if (m_ParabolaList.size() > 2)
-		{
-			struct Circle lCircle;
-			unsigned lRemoveLocation;
-			bool CheckVertix = true;
+		// process any circle events
+		ProcessCircleEvents(lSweepLine);
 
-			while (CheckVertix)
+		// process the new site event
+		ProcessSiteEvents(lCurrent, lSweepLine);
+	}
+
+	PostProcessing();
+}
+
+/** Finish up creating the diagram by processing any circle events left
+*/
+void MyLibrary::VoronoiDiagram::PostProcessing()
+{
+	std::list<unsigned>::iterator lRemoveLocation;
+	struct Circle lCircle;
+	bool CheckCircle = true;
+
+	while (CheckCircle)
+	{
+		lRemoveLocation = m_ParabolaList.begin();
+		for (std::list<unsigned>::iterator il = std::next(m_ParabolaList.begin()); il != std::prev(m_ParabolaList.end()); il++)
+		{
+			if ((*std::prev(il)) != (*std::next(il)))
 			{
-				lCircle = { 0.0, lSweepLine, -1.0 };
-				lRemoveLocation = 0;
-				for (unsigned lCount = 1; lCount < (m_ParabolaList.size() - 1); lCount++)
+				double lDeterminant = calculateDeterminant(m_PolygonCenters[*std::prev(il)], m_PolygonCenters[(*il)], m_PolygonCenters[*std::next(il)]);
+				if (lDeterminant < 0.0)
 				{
-					if (m_ParabolaList[lCount - 1] != m_ParabolaList[lCount + 1])
+					// should calculate the intersections of the two parabolas, would need to increment the sweep line in this case
+					struct Circle lTempCircle = CreateCircle(m_PolygonCenters[*std::prev(il)], m_PolygonCenters[*(il)], m_PolygonCenters[*std::next(il)]);
+					if (lRemoveLocation == m_ParabolaList.begin() || (lCircle.Radius > 0.0 && lTempCircle.Center.Y > lCircle.Center.Y))
 					{
-						double lDeterminant = calculateDeterminant(m_PolygonCenters[m_ParabolaList[lCount - 1]], m_PolygonCenters[m_ParabolaList[lCount]], m_PolygonCenters[m_ParabolaList[lCount + 1]]);
-						if (lDeterminant < 0.0)
+						lCircle = lTempCircle;
+						lRemoveLocation = il;
+					}
+				}
+			}
+		}
+
+		if (lRemoveLocation != m_ParabolaList.begin())
+		{
+			// add the new node to the graph
+			InsertNewNode(lRemoveLocation, lCircle.Center);
+
+			// reset the remove location
+			lRemoveLocation = m_ParabolaList.begin();
+		}
+		else
+		{
+			// no more points need to be removed from the parabola list
+			CheckCircle = false;
+		}
+	}
+}
+
+/** Process any circle events in the parabola list
+* @param aSweepLine The value of the sweep line
+*/
+void MyLibrary::VoronoiDiagram::ProcessCircleEvents(double aSweepLine)
+{
+	std::list<unsigned>::iterator lRemoveLocation;
+	struct Circle lCircle;
+	bool CheckCircle = true;
+
+	// Process any circle events
+	if (m_ParabolaList.size() > 2)
+	{
+		while (CheckCircle)
+		{
+			lCircle = { 0.0, aSweepLine, -1.0 };
+			lRemoveLocation = m_ParabolaList.begin();
+			for (std::list<unsigned>::iterator il = std::next(m_ParabolaList.begin()); il != std::prev(m_ParabolaList.end()); il++)
+			{
+				if ((*std::prev(il)) != (*std::next(il)))
+				{
+					double lDeterminant = calculateDeterminant(m_PolygonCenters[*std::prev(il)], m_PolygonCenters[(*il)], m_PolygonCenters[*std::next(il)]);
+					if (lDeterminant < 0.0)
+					{
+						// should calculate the intersections of the two parabolas, would need to increment the sweep line in this case
+						struct Circle lTempCircle = CreateCircle(m_PolygonCenters[*std::prev(il)], m_PolygonCenters[*(il)], m_PolygonCenters[*std::next(il)]);
+						if (abs(lTempCircle.Center.Y - aSweepLine) >= lTempCircle.Radius)
 						{
-							// should calculate the intersections of the two parabolas, would need to increment the sweep line in this case
-							struct Circle lTempCircle = CreateCircle(m_PolygonCenters[m_ParabolaList[lCount - 1]], m_PolygonCenters[m_ParabolaList[lCount]], m_PolygonCenters[m_ParabolaList[lCount + 1]]);
-							if (abs(lTempCircle.Center.Y - lSweepLine) >= lTempCircle.Radius)
+							if (lRemoveLocation == m_ParabolaList.begin() || (lCircle.Radius > 0.0 && lTempCircle.Center.Y > lCircle.Center.Y))
 							{
-								if (lCircle.Radius == 0.0 || (lCircle.Radius > 0.0 && abs(lTempCircle.Center.Y - lSweepLine) > abs(lCircle.Center.Y - lSweepLine)))
-								{
-									lCircle = lTempCircle;
-									lRemoveLocation = lCount;
-								}
+								lCircle = lTempCircle;
+								lRemoveLocation = il;
 							}
 						}
 					}
 				}
-				if (lRemoveLocation != 0)
-				{
-					// add the new node to the graph
-					it = m_ParabolaList.begin() + lRemoveLocation;
-					Node<Position> lNewNode = Node<Position>(0, lCircle.Center);
-					unsigned lNodeIndex = m_Graph.addNode(lNewNode);
-					
-					for (std::list<std::tuple<unsigned, unsigned, unsigned>>::iterator ik = lEdgeTracker.begin(); ik != lEdgeTracker.end(); it++)
-					{
-						// if a previous node is connected to the new node then create the edges.
-						if (std::get<0>(*ik)== lRemoveLocation || std::get<1>(*ik) == lRemoveLocation)
-						{
-							m_Graph.addEdge(std::get<2>(*ik), lNodeIndex, 0);
-							m_Graph.addEdge(lNodeIndex, std::get<2>(*ik), 0);
-							lEdgeTracker.erase(ik);
-						}
-					}
-
-					// store the history of the new node so that the edge can be created at a later time
-					lEdgeTracker.push_front(std::tuple<unsigned, unsigned, unsigned>(lRemoveLocation-1, lRemoveLocation, lNodeIndex));
-					
-					// remove the parabola from the beach line
-					m_ParabolaList.erase(it);
-
-					// reset the remove location
-					lRemoveLocation = 0;
-				}
-				else
-				{
-					// no more points need to be removed from the parabola list
-					CheckVertix = false;
-				}
-			} // CheckVertex
-		} // Process Circle Events
+			}
 
 
-		Position lOldIntersection;
-		// Process the point event
-		for (unsigned lCount = 1; lCount < m_ParabolaList.size(); lCount++)
-		{
-			Position lIntersection1, lIntersection2;
-			int lNumberOfIntersections = getIntersections(m_PolygonCenters[m_ParabolaList[lCount - 1]], m_PolygonCenters[m_ParabolaList[lCount]], lSweepLine, lIntersection1, lIntersection2);
-
-			if (lNumberOfIntersections == 0) throw 1;
-			if (lNumberOfIntersections == 1)
+			if (lRemoveLocation != m_ParabolaList.begin())
 			{
-				if (m_PolygonCenters[lCurrent].X < lIntersection1.X)
+				// add the new node to the graph
+				InsertNewNode(lRemoveLocation, lCircle.Center);
+
+				// reset the remove location
+				lRemoveLocation = m_ParabolaList.begin();
+			}
+			else
+			{
+				// no more points need to be removed from the parabola list
+				CheckCircle = false;
+			}
+		}
+	}
+}
+
+/** Perform the processing needed to insert a new node into the graph
+* @param aRemoveLocation The location in the parabola list of the parabla being removed
+* @param aNewNodePosition The position of the new node
+*/
+void MyLibrary::VoronoiDiagram::InsertNewNode(const std::list<unsigned>::iterator& aRemoveLocation, const Position& aNewNodePosition)
+{
+	// add the new node to the graph
+	Node<Position> lNewNode = Node<Position>(0, aNewNodePosition);
+	unsigned lNodeIndex = m_Graph.addNode(lNewNode);
+
+	EdgeTracker lNewEdge1, lNewEdge2;
+	lNewEdge1.NodeIndex = lNodeIndex;
+	lNewEdge2.NodeIndex = lNodeIndex;
+
+	Position temp = m_PolygonCenters[*std::prev(aRemoveLocation)].Y < m_PolygonCenters[*std::next(aRemoveLocation)].Y ? m_PolygonCenters[*std::prev(aRemoveLocation)] : m_PolygonCenters[*std::next(aRemoveLocation)];
+	if (temp.X < aNewNodePosition.X)
+	{
+		lNewEdge2.LeftParabola = std::prev(std::prev(aRemoveLocation));
+		lNewEdge2.RightParabola = std::prev(aRemoveLocation);
+
+		lNewEdge1.LeftParabola = std::prev(aRemoveLocation);
+		lNewEdge1.RightParabola = std::next(aRemoveLocation);
+	}
+	else
+	{
+		lNewEdge1.LeftParabola = std::prev(aRemoveLocation);
+		lNewEdge1.RightParabola = std::next(aRemoveLocation);
+
+		lNewEdge2.LeftParabola = std::next(aRemoveLocation);
+		lNewEdge2.RightParabola = std::next(std::next(aRemoveLocation));
+	}
+
+	// Add edges that are now complete to the graph
+	{
+		std::list<std::list<EdgeTracker>::iterator> lRemoveList;
+		for (std::list<EdgeTracker>::iterator ik = m_EdgeTracker.begin(); ik != m_EdgeTracker.end(); ik++)
+		{
+			if ((*ik).LeftParabola == aRemoveLocation || (*ik).RightParabola == aRemoveLocation)
+			{
+				m_Graph.addEdge((*ik).NodeIndex, lNodeIndex, 0);
+				m_Graph.addEdge(lNodeIndex, (*ik).NodeIndex, 0);
+				lRemoveList.push_front(ik);
+			}
+		}
+		while (!lRemoveList.empty())
+		{
+			m_EdgeTracker.erase(lRemoveList.front());
+			lRemoveList.pop_front();
+		}
+	}
+
+	// store the history of the new node so that the edge can be created at a later time
+	m_EdgeTracker.push_front(lNewEdge1);
+	m_EdgeTracker.push_front(lNewEdge2);
+
+	// remove the parabola from the beach line
+	m_ParabolaList.erase(aRemoveLocation);
+}
+
+/** Perform the processing needed to add a new parabola to the list
+* @param aCurrent The location in the polygon center list of the new parabola focus
+* @param aSweepLine The value of the sweep line
+*/
+void MyLibrary::VoronoiDiagram::ProcessSiteEvents(unsigned& aCurrent, double aSweepLine)
+{
+	std::list<unsigned>::iterator it;
+	Position lOldIntersection;
+	bool lInserted = false;
+
+	// Process the point event
+	for (std::list<unsigned>::iterator ik = std::next(m_ParabolaList.begin()); ik != m_ParabolaList.end(); ik++)
+	{
+		Position lIntersection1, lIntersection2;
+		int lNumberOfIntersections = getIntersections(m_PolygonCenters[*std::prev(ik)], m_PolygonCenters[*(ik)], aSweepLine, lIntersection1, lIntersection2);
+
+		if (lNumberOfIntersections == 0) throw 1; // same x, different y
+		if (lNumberOfIntersections == 1) // same y, different x
+		{
+			if (m_PolygonCenters[aCurrent].X < lIntersection1.X)
+			{
+				it = m_ParabolaList.insert(ik, aCurrent);
+				m_ParabolaList.insert(ik, *std::prev(it));
+				ProcessEdgesForParabolaInsertion(it);
+				aCurrent++;
+				lInserted = true;
+				break;
+			}
+			lOldIntersection = lIntersection1;
+		}
+		if (lNumberOfIntersections == 2)
+		{
+			it = std::find(m_ParabolaList.begin(), ik, *ik);
+			if (ik != std::next(m_ParabolaList.begin()) && (it != ik || lOldIntersection.X > lIntersection1.X))
+			{
+				if (m_PolygonCenters[aCurrent].X < lIntersection2.X)
 				{
-					it = m_ParabolaList.begin() + lCount;
-					m_ParabolaList.insert(it - 1, lCurrent);
-
-					it = m_ParabolaList.begin() + lCount;
-					m_ParabolaList.insert(it - 1, m_ParabolaList[lCount]);
-					lCurrent++;
-
+					it = m_ParabolaList.insert(ik, aCurrent);
+					m_ParabolaList.insert(ik, *std::prev(it));
+					ProcessEdgesForParabolaInsertion(it);
+					aCurrent++;
+					lInserted = true;
+					break;
+				}
+				lOldIntersection = lIntersection2;
+			}
+			else
+			{
+				if (m_PolygonCenters[aCurrent].X < lIntersection1.X)
+				{
+					it = m_ParabolaList.insert(ik, aCurrent);
+					m_ParabolaList.insert(ik, *std::prev(it));
+					ProcessEdgesForParabolaInsertion(it);
+					aCurrent++;
+					lInserted = true;
 					break;
 				}
 				lOldIntersection = lIntersection1;
 			}
-			if (lNumberOfIntersections == 2)
-			{
-				it = m_ParabolaList.begin() + lCount;
-				it = std::find(m_ParabolaList.begin(), it, m_ParabolaList[lCount]);
-				if (lCount > 1 && (it < m_ParabolaList.begin() + lCount || lOldIntersection.X > lIntersection1.X))
-				{
-					if (m_PolygonCenters[lCurrent].X < lIntersection2.X)
-					{
-						it = m_ParabolaList.begin() + lCount;
-						m_ParabolaList.insert(it - 1, lCurrent);
+		}
+	}
+	if (!lInserted)
+	{
+		// insert it on top of the last parabola
+		it = std::prev(m_ParabolaList.end());
+		it = m_ParabolaList.insert(it, aCurrent);
+		m_ParabolaList.insert(it, *std::prev(it));
+		ProcessEdgesForParabolaInsertion(it);
+		aCurrent++;
+	}
+}
 
-						it = m_ParabolaList.begin() + lCount;
-						m_ParabolaList.insert(it - 1, m_ParabolaList[lCount]);
-						lCurrent++;
-
-						
-						break;
-					}
-					lOldIntersection = lIntersection2;
-				}
-				else
-				{
-
-					if (m_PolygonCenters[lCurrent].X < lIntersection1.X )
-					{
-						it = m_ParabolaList.begin() + lCount;
-						m_ParabolaList.insert(it - 1, lCurrent);
-
-						it = m_ParabolaList.begin() + lCount;
-						m_ParabolaList.insert(it - 1, m_ParabolaList[lCount]);
-						lCurrent++;
-						break;
-					}
-					lOldIntersection = lIntersection1;
-				}
-			}
+/** Perform any processing on the current edges for a new parabola in the list
+* @parama InsertLocation The location in the parabola list of the new parabola
+*/
+void MyLibrary::VoronoiDiagram::ProcessEdgesForParabolaInsertion(const std::list<unsigned>::iterator& aInsertLocation)
+{
+	// If the left parabola of any edge is equal to the left of the new insertion then
+	// set the letf parabola of the edge to the parabola to the edge after the insertion
+	for (std::list<EdgeTracker>::iterator ik = m_EdgeTracker.begin(); ik != m_EdgeTracker.end(); ik++)
+	{
+		if ((*ik).LeftParabola == std::prev(aInsertLocation))
+		{
+			(*ik).LeftParabola = std::next(aInsertLocation);
+			break;
 		}
 	}
 }
