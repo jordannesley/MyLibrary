@@ -8,7 +8,7 @@
 
 #include "Graph_Node.h"
 #include "Graph_AdjacentNode.h"
-#include <memory>
+#include "MyList.h"
 #include <vector>
 
 #pragma unmanaged
@@ -29,12 +29,11 @@ namespace MyLibrary {
 	{
 	private:
 		std::vector<Node<T1>> m_NodeList;
-		std::vector<std::shared_ptr<MyLibrary::AdjacentNode<T2>>> m_AdjacentNodeList;
+		std::vector<MyList<AdjacentNode<T2>>> m_AdjacentNodeList;
+		Graph(const Graph<T1, T2>& aCopy);
 	public:
 		Graph();
 		Graph(const std::vector<Node<T1>> aNodes);
-		Graph(const Graph<T1, T2>& aCopy);
-		Graph(Graph<T1, T2>&& aMove);
 
 		Node<T1> getNode(const unsigned aNodeIndex) const;
 		std::vector<Node<T1>> getAllNodes() const;
@@ -54,7 +53,7 @@ MyLibrary::Graph<T1,T2>::Graph()
 {
 	// initialize the nodes list and edges
 	this->m_NodeList = std::vector<Node<T1>>();
-	this->m_AdjacentNodeList = std::vector<std::shared_ptr<MyLibrary::AdjacentNode<T2>>>();
+	this->m_AdjacentNodeList = std::vector<MyList<AdjacentNode<T2>>>();
 }
 
 /** Constructor for Graph
@@ -70,34 +69,7 @@ MyLibrary::Graph<T1,T2>::Graph(const std::vector<Node<T1>> aNodes)
 	}
 
 	// initialize the edges
-	this->m_AdjacentNodeList = std::vector<std::shared_ptr<MyLibrary::AdjacentNode<T2>>>(aNodes.size(), std::shared_ptr<MyLibrary::AdjacentNode<T2>>());
-}
-
-/** Copy Constructor for Graph
-* @param aCopy The object to copy
-*/
-template<typename T1, typename T2>
-MyLibrary::Graph<T1, T2>::Graph(const Graph<T1, T2>& aCopy)
-{
-	this->m_NodeList = aCopy.m_NodeList;
-	this->m_AdjacentNodeList = std::vector<AdjacentNode<T2>>(aCopy.m_AdjacentNodeList.size());
-	for (unsigned lCount = 0; lCount < this->m_AdjacentNodeList.size(); lCount++)
-	{
-		std::shared_ptr<MyLibrary::AdjacentNode<T2>> lCurrent = this->m_AdjacentNodeList[aStartNode];
-		while (lCurrent != nullptr)
-		{
-			
-		}
-	}
-}
-
-/** Move Constructor for Graph
-* @param aMove The object to move
-*/
-template<typename T1, typename T2>
-MyLibrary::Graph<T1, T2>::Graph(Graph<T1, T2>&& aMove)
-{
-
+	this->m_AdjacentNodeList = std::vector<MyList<AdjacentNode<T2>>>(aNodes.size());//, MyList<AdjacentNode<T2>>());
 }
 
 /** Returns the node of the specified index
@@ -131,18 +103,18 @@ MyLibrary::EdgeData<T2> MyLibrary::Graph<T1, T2>::getEdgeData(const unsigned aSt
 	if (aStartNode >= this->m_NodeList.size()) throw 1;
 	if (aEndNode >= this->m_NodeList.size()) throw 1;
 
-	std::shared_ptr<MyLibrary::AdjacentNode<T2>> lCurrent = this->m_AdjacentNodeList[aStartNode];
+	MyListIterator<AdjacentNode<T2>> lCurrent = this->m_AdjacentNodeList[aStartNode].begin();
 	EdgeData<T2> lResult = EdgeData<T2>();
-	while (lCurrent != nullptr)
+	while (lCurrent != this->m_AdjacentNodeList[aStartNode].end())
 	{
-		if (lCurrent->getEndingNodeIndex() == aEndNode)
+		if ((*lCurrent).getEndingNodeIndex() == aEndNode)
 		{
 			lResult.StartNode = aStartNode;
-			lResult.EndNode = lCurrent->getEndingNodeIndex();
-			lResult.Data = lCurrent->getData();
+			lResult.EndNode = (*lCurrent).getEndingNodeIndex();
+			lResult.Data = (*lCurrent).getData();
 			break;
 		}
-		lCurrent = lCurrent->getNext();
+		lCurrent++;
 	}
 
 	return lResult;
@@ -155,17 +127,20 @@ MyLibrary::EdgeData<T2> MyLibrary::Graph<T1, T2>::getEdgeData(const unsigned aSt
 template<typename T1, typename T2>
 std::vector<MyLibrary::EdgeData<T2>> MyLibrary::Graph<T1,T2>::getAllEdges(const unsigned aNodeIndex) const
 {
-	std::shared_ptr<MyLibrary::AdjacentNode<T2>> lCurrent = this->m_AdjacentNodeList[aNodeIndex];
-	std::vector<EdgeData<T2>> lResult = std::vector<EdgeData<T2>>();
-	while (lCurrent != nullptr)
+	MyListIterator<AdjacentNode<T2>> lCurrent = this->m_AdjacentNodeList[aNodeIndex].begin();
+	std::vector<EdgeData<T2>> lResult = std::vector<EdgeData<T2>>(this->m_AdjacentNodeList[aNodeIndex].size());
+	int Index = 0;
+	while (lCurrent != this->m_AdjacentNodeList[aNodeIndex].end())
 	{
 		EdgeData<T2> lTemp;
 		lTemp.StartNode = aNodeIndex;
-		lTemp.EndNode = lCurrent->getEndingNodeIndex();
-		lTemp.Data = lCurrent->getData();
-		lResult.push_back(lTemp);
+		lTemp.EndNode = (*lCurrent).getEndingNodeIndex();
+		lTemp.Data = (*lCurrent).getData();
 
-		lCurrent = lCurrent->getNext();
+		lResult[Index] = lTemp;
+
+		lCurrent++;
+		Index++;
 	}
 
 	return lResult;
@@ -182,7 +157,7 @@ unsigned MyLibrary::Graph<T1,T2>::addNode(const Node<T1> aNode)
 	lTemp.setIndex(this->m_NodeList.size());
 	this->m_NodeList.push_back(lTemp);
 
-	this->m_AdjacentNodeList.push_back(std::shared_ptr<MyLibrary::AdjacentNode<T2>>());
+	this->m_AdjacentNodeList.push_back(MyList<MyLibrary::AdjacentNode<T2>>());
 
 	return this->m_NodeList[this->m_NodeList.size() - 1].getIndex();
 }
@@ -201,22 +176,9 @@ void MyLibrary::Graph<T1,T2>::addEdge(const unsigned aStartNode, const unsigned 
 	// If the edge already exists then do nothing.
 	if (this->isConnected(aStartNode, aEndNode)) return;
 
-	std::unique_ptr<MyLibrary::AdjacentNode<T2>> lNew = std::unique_ptr<MyLibrary::AdjacentNode<T2>>(new MyLibrary::AdjacentNode<T2>(aEndNode, aData));
+	AdjacentNode<T2> lNew = AdjacentNode<T2>(aEndNode, aData);
 
-	if (this->m_AdjacentNodeList[aStartNode] == nullptr)
-	{
-		m_AdjacentNodeList[aStartNode].reset(lNew.release());
-	}
-	else
-	{
-		std::shared_ptr<MyLibrary::AdjacentNode<T2>> lCurrent = this->m_AdjacentNodeList[aStartNode];
-		while (lCurrent->getNext() != nullptr)
-		{
-			lCurrent = lCurrent->getNext();
-		}
-		lCurrent->m_Next.reset(lNew.release());
-	}
-
+	this->m_AdjacentNodeList[aStartNode].pushBack(lNew);
 }
 
 /** Returns wither there is an edge exists between the two nodes
@@ -229,11 +191,11 @@ bool MyLibrary::Graph<T1,T2>::isConnected(const unsigned aStartNode, const unsig
 	if (aStartNode >= this->m_NodeList.size()) throw 1;
 	if (aEndNode >= this->m_NodeList.size()) throw 1;
 
-	std::shared_ptr<MyLibrary::AdjacentNode<T2>> lCurrent = this->m_AdjacentNodeList[aStartNode];
-	while (lCurrent != nullptr)
+	MyListIterator<AdjacentNode<T2>> lCurrent = this->m_AdjacentNodeList[aStartNode].begin();
+	while (lCurrent != this->m_AdjacentNodeList[aStartNode].end())
 	{
-		if (lCurrent->getEndingNodeIndex() == aEndNode) return true;
-		lCurrent = lCurrent->getNext();
+		if ((*lCurrent).getEndingNodeIndex() == aEndNode) return true;
+		lCurrent++;
 	}
 	return false;
 }

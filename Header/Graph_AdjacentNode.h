@@ -15,10 +15,7 @@ namespace MyLibrary
 	template<typename T>
 	class AdjacentNode
 	{
-		template<typename T1, typename T2>
-		friend class Graph;
 	private:
-		std::shared_ptr<AdjacentNode<T>> m_Next;
 		int m_EndingNodeIndex;
 		T m_Data;
 	public:
@@ -26,7 +23,6 @@ namespace MyLibrary
 		AdjacentNode(const unsigned aEndingNodeIndex);
 		AdjacentNode(const unsigned aEndingNodeIndex, const T& aData);
 
-		std::shared_ptr<AdjacentNode> getNext() const;
 		int getEndingNodeIndex() const;
 		T getData() const;
 
@@ -39,7 +35,6 @@ namespace MyLibrary
 template<typename T>
 MyLibrary::AdjacentNode<T>::AdjacentNode()
 {
-	this->m_Next = std::shared_ptr<AdjacentNode<T>>();
 	this->m_EndingNodeIndex = -1;
 	this->m_Data = T();
 }
@@ -50,7 +45,6 @@ MyLibrary::AdjacentNode<T>::AdjacentNode()
 template<typename T>
 MyLibrary::AdjacentNode<T>::AdjacentNode(const unsigned aEndingNodeIndex)
 {
-	this->m_Next = std::shared_ptr<AdjacentNode<T>>();
 	this->m_EndingNodeIndex = aEndingNodeIndex;
 	this->m_Data = T();
 }
@@ -62,18 +56,8 @@ MyLibrary::AdjacentNode<T>::AdjacentNode(const unsigned aEndingNodeIndex)
 template<typename T>
 MyLibrary::AdjacentNode<T>::AdjacentNode(const unsigned aEndingNodeIndex, const T& aData)
 {
-	this->m_Next = std::shared_ptr<AdjacentNode<T>>();
 	this->m_EndingNodeIndex = aEndingNodeIndex;
 	this->m_Data = aData;
-}
-
-/** Returns the ending node index of the Edge
-* @return The index
-*/
-template<typename T>
-std::shared_ptr<MyLibrary::AdjacentNode<T>> MyLibrary::AdjacentNode<T>::getNext() const
-{
-	return this->m_Next;
 }
 
 /** Returns the ending node index of the Edge

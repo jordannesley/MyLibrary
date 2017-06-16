@@ -185,30 +185,46 @@ void MyLibrary::VoronoiDiagram::InsertNewNode(const std::list<unsigned>::iterato
 		lNewEdge2.LeftParabola = std::next(aRemoveLocation);
 		lNewEdge2.RightParabola = std::next(std::next(aRemoveLocation));
 	}
-
-	// Add edges that are now complete to the graph
 	{
-		std::list<std::list<EdgeTracker>::iterator> lRemoveList;
-		for (std::list<EdgeTracker>::iterator ik = m_EdgeTracker.begin(); ik != m_EdgeTracker.end(); ik++)
+		bool lInsertEdge1 = true;
+		bool lInsertEdge2 = true;
+
+		// Add edges that are now complete to the graph
 		{
-			if ((*ik).LeftParabola == aRemoveLocation || (*ik).RightParabola == aRemoveLocation)
+			std::list<std::list<EdgeTracker>::iterator> lRemoveList;
+			for (std::list<EdgeTracker>::iterator ik = m_EdgeTracker.begin(); ik != m_EdgeTracker.end(); ik++)
 			{
-				m_Graph.addEdge((*ik).NodeIndex, lNodeIndex, 0);
-				m_Graph.addEdge(lNodeIndex, (*ik).NodeIndex, 0);
-				lRemoveList.push_front(ik);
+				// if the removed parabola is part of an edge then create the edge in the graph and link the nodes
+				if ((*ik).LeftParabola == aRemoveLocation || (*ik).RightParabola == aRemoveLocation)
+				{
+					m_Graph.addEdge((*ik).NodeIndex, lNodeIndex, 0);
+					m_Graph.addEdge(lNodeIndex, (*ik).NodeIndex, 0);
+					lRemoveList.push_front(ik);
+				}
+
+				// if one of the new edges matches an already existing edge then do not insert it.
+				if ((*ik).LeftParabola == lNewEdge1.LeftParabola || (*ik).RightParabola == lNewEdge1.RightParabola)
+				{
+					lInsertEdge1 = false;
+				}
+				if ((*ik).LeftParabola == lNewEdge2.LeftParabola || (*ik).RightParabola == lNewEdge2.RightParabola)
+				{
+					lInsertEdge2 = false;
+				}
+			}
+			while (!lRemoveList.empty())
+			{
+				m_EdgeTracker.erase(lRemoveList.front());
+				lRemoveList.pop_front();
 			}
 		}
-		while (!lRemoveList.empty())
-		{
-			m_EdgeTracker.erase(lRemoveList.front());
-			lRemoveList.pop_front();
-		}
+
+		// NEED TO CHECK IF ONE OF THE NEW EDGES MATCHES THE AND EDGE THAT ALREADY EXISTS
+
+		// store the history of the new node so that the edge can be created at a later time
+		if (lInsertEdge1) m_EdgeTracker.push_front(lNewEdge1);
+		if (lInsertEdge2) m_EdgeTracker.push_front(lNewEdge2);
 	}
-
-	// store the history of the new node so that the edge can be created at a later time
-	m_EdgeTracker.push_front(lNewEdge1);
-	m_EdgeTracker.push_front(lNewEdge2);
-
 	// remove the parabola from the beach line
 	m_ParabolaList.erase(aRemoveLocation);
 }
