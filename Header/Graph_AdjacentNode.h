@@ -10,8 +10,6 @@
 
 #pragma unmanaged
 
-namespace MyLibrary
-{
 	template<typename T>
 	class AdjacentNode
 	{
@@ -28,12 +26,11 @@ namespace MyLibrary
 
 		void setData(const T& aData);
 	};
-}
 
 /** Default Constructor for AdjacentNodeBase
 */
 template<typename T>
-MyLibrary::AdjacentNode<T>::AdjacentNode()
+AdjacentNode<T>::AdjacentNode()
 {
 	this->m_EndingNodeIndex = -1;
 	this->m_Data = T();
@@ -43,7 +40,7 @@ MyLibrary::AdjacentNode<T>::AdjacentNode()
 * @param EndingNodeIndex The index of the ending node
 */
 template<typename T>
-MyLibrary::AdjacentNode<T>::AdjacentNode(const unsigned aEndingNodeIndex)
+AdjacentNode<T>::AdjacentNode(const unsigned aEndingNodeIndex)
 {
 	this->m_EndingNodeIndex = aEndingNodeIndex;
 	this->m_Data = T();
@@ -54,7 +51,7 @@ MyLibrary::AdjacentNode<T>::AdjacentNode(const unsigned aEndingNodeIndex)
 * @param aData The data of the edge
 */
 template<typename T>
-MyLibrary::AdjacentNode<T>::AdjacentNode(const unsigned aEndingNodeIndex, const T& aData)
+AdjacentNode<T>::AdjacentNode(const unsigned aEndingNodeIndex, const T& aData)
 {
 	this->m_EndingNodeIndex = aEndingNodeIndex;
 	this->m_Data = aData;
@@ -64,7 +61,7 @@ MyLibrary::AdjacentNode<T>::AdjacentNode(const unsigned aEndingNodeIndex, const 
 * @return The index
 */
 template<typename T>
-int MyLibrary::AdjacentNode<T>::getEndingNodeIndex() const
+int AdjacentNode<T>::getEndingNodeIndex() const
 {
 	return this->m_EndingNodeIndex;
 }
@@ -73,7 +70,7 @@ int MyLibrary::AdjacentNode<T>::getEndingNodeIndex() const
 * @return The type
 */
 template<typename T>
-T MyLibrary::AdjacentNode<T>::getData() const
+T AdjacentNode<T>::getData() const
 {
 	return this->m_Data;
 }
@@ -82,7 +79,7 @@ T MyLibrary::AdjacentNode<T>::getData() const
 * @param aData The new data of the edge
 */
 template<typename T>
-void MyLibrary::AdjacentNode<T>::setData(const T& aData)
+void AdjacentNode<T>::setData(const T& aData)
 {
 	this - m_Data = aData;
 }

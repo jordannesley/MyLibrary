@@ -1,65 +1,64 @@
-/**
-*  @file    VoronoiDiagram.h
-*  @author  Jordan Nesley
-**/
+// Fill out your copyright notice in the Description page of Project Settings.
 
-#ifndef VORONOIDIAGRAM_H
-#define VORONOIDIAGRAM_H
+#pragma once
 
+#include <vector>
+#include "MyList.h"
 #include "Graph_Graph.h"
-#include "Utilities.h"
-#include <list>
+#include "Position.h"
+#include "MapPolygon.h"
 #include <algorithm>
-#include <tuple>
-#include <math.h>
+#include "Utilities.h"
 
-namespace MyLibrary
+/**
+*
+*/
+class VoronoiDiagram
 {
-	struct Position
+private:
+	struct Circle
 	{
-		double X;
-		double Y;
+		double Radius;
+		Position Center;
 	};
 
-	class VoronoiDiagram
+	struct EdgeTracker
 	{
-	private:
-		struct Circle
-		{
-			double Radius;
-			Position Center;
-		};
-
-		struct EdgeTracker
-		{
-			std::list<unsigned>::iterator LeftParabola;
-			std::list<unsigned>::iterator RightParabola;
-			unsigned NodeIndex;
-		};
-
-		std::list<unsigned> m_ParabolaList;
-		std::vector<Position> m_PolygonCenters;
-		std::list<EdgeTracker> m_EdgeTracker;
-		Graph<Position, int> m_Graph;
-		Position m_MaxPosition;
-		Position m_MinPosition;
-		
-		void ProcessCircleEvents(double aSweepLine);
-		void ProcessSiteEvents(unsigned& aCurrent, double aSweepLine);
-		void ProcessEdgesForParabolaInsertion(const std::list<unsigned>::iterator& aInsertLocation);
-		void InsertNewNode(const std::list<unsigned>::iterator& aRemoveLocation, const Position& aNewNodePosition);
-		void PostProcessing();
-
-		static Circle CreateCircle(const Position& a, const Position& b, const Position& c);
-		static int getIntersections(const MyLibrary::Position& aPosition1, const MyLibrary::Position& aPosition2, const double& aSweep, MyLibrary::Position& aIntersection1, MyLibrary::Position& aIntersection2);
-		static double calculateDeterminant(const MyLibrary::Position& aA, const MyLibrary::Position& aB, const MyLibrary::Position& aC);
-	public:
-		
-		VoronoiDiagram();
-		VoronoiDiagram(const std::vector<Position>& aPolygonCenters);
-
-		void CreateDiagram();
+		MyListIterator<int> LeftParabola;
+		MyListIterator<int> RightParabola;
+		int NodeIndex;
 	};
-}
 
-#endif
+	struct PolygonTracker
+	{
+		MyList<Edge> Edges;
+		MyList<int> Nodes;
+	};
+
+	static void ProcessCircleEvents(double aSweepLine, std::vector<Position>& aPolygonCenters, MyList<int>& aParabolaList, MyList<EdgeTracker>& aEdgeTracker,
+		MyList<PolygonTracker>& aPolygonTrackerList, MyList<MapPolygon>& aPolygonList, Graph<Position, int>& aGraph);
+	static void ProcessSiteEvents(int& aCurrent, double aSweepLine, std::vector<Position>& aPolygonCenters, MyList<int>& aParabolaList, MyList<EdgeTracker>& aEdgeTracker);
+	static void ProcessEdgesForParabolaInsertion(const MyListIterator<int>& aInsertLocation, MyList<EdgeTracker>& aEdgeTracker);
+
+
+	static void InsertNewNode(MyListIterator<int>& aRemoveLocation, const Position& aNewNodePosition, std::vector<Position>& aPolygonCenters, MyList<int>& aParabolaList,
+		MyList<EdgeTracker>& aEdgeTracker, MyList<PolygonTracker>& aPolygonTrackerList, MyList<MapPolygon>& aPolygonList, Graph<Position, int>& aGraph);
+
+	static void PostProcessing(std::vector<Position>& aPolygonCenters, MyList<int>& aParabolaList, MyList<EdgeTracker>& aEdgeTracker, MyList<PolygonTracker>& aPolygonTrackerList,
+		MyList<MapPolygon>& aPolygonList, Graph<Position, int>& aGraph);
+
+	static MyList<EdgeTracker> CreateEdgeTrackers(const MyListIterator<int>& aRemoveLocation,
+		const int& aNewNodeIndex, const Position& aNewNodePosition, const std::vector<Position>& aPolygonCenters,
+		const MyList<EdgeTracker>& aEdgeTrackerList, MyList<int>& aParabolaList);
+
+	static void CompleteEdges(MyListIterator<int>& aRemoveLocation, const int& aNewNodeIndex, Graph<Position, int>& aGraph,
+		MyList<EdgeTracker>& aEdgeTrackerList, MyList<PolygonTracker>& aPolygonTracker, MyList<MapPolygon>& aPolygonList, MyList<int>& aParabolaList);
+
+	static Circle CreateCircle(const Position& a, const Position& b, const Position& c);
+	static int getIntersections(const Position& aPosition1, const Position& aPosition2, const double& aSweep, Position& aIntersection1, Position& aIntersection2);
+	static double calculateDeterminant(const Position& aA, const Position& aB, const Position& aC);
+	static Position calculatePolygonCenter(const MyList<int>& aVertexIndexList, Graph<Position, int>& aGraph);
+
+public:
+	static Graph<Position, int> CreateDiagram(const std::vector<Position>& aPolygonCenters, MyList<MapPolygon>& aPolygons);
+};

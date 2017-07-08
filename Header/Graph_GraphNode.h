@@ -1,28 +1,26 @@
 /**
-*  @file    Graph_Node.h
+*  @file    Graph_GraphNode.h
 *  @author  Jordan Nesley
 **/
 
-#ifndef NODE_H
-#define NODE_H
+#ifndef GraphNode_H
+#define GraphNode_H
 
 #include <vector>
 
 
 #pragma unmanaged
 
-namespace MyLibrary
-{
 	template<typename T>
-	class Node
+	class GraphNode
 	{
 	private:
 		unsigned m_Index;
 		T m_Data;
 	public:
-		Node();
-		Node(const unsigned aIndex, const T aData);
-		Node(const Node& aCopy);
+		GraphNode();
+		GraphNode(const unsigned aIndex, const T aData);
+		GraphNode(const GraphNode& aCopy);
 
 		unsigned getIndex() const;
 		T getData() const;
@@ -30,59 +28,58 @@ namespace MyLibrary
 		void setIndex(const unsigned aIndex);
 
 	};
-}
 
-/** Default constructor for Node
+/** Default constructor for GraphNode
 */
 template<typename T>
-MyLibrary::Node<T>::Node()
+GraphNode<T>::GraphNode()
 {
 	this->m_Index = 0;
 	this->m_Data = T();
 }
 
-/** Constructor for Node
-* @param aIndex The index of the Node;
+/** Constructor for GraphNode
+* @param aIndex The index of the GraphNode;
 */
 template<typename T>
-MyLibrary::Node<T>::Node(const unsigned aIndex, const T aData)
+GraphNode<T>::GraphNode(const unsigned aIndex, const T aData)
 {
 	this->m_Index = aIndex;
 	this->m_Data = aData;
 }
 
-/** Copy constructor for Node
+/** Copy constructor for GraphNode
 */
 template<typename T>
-MyLibrary::Node<T>::Node(const Node& aCopy)
+GraphNode<T>::GraphNode(const GraphNode& aCopy)
 {
 	this->m_Index = aCopy.m_Index;
 	this->m_Data = aCopy.m_Data;
 }
 
-/** Returns the index of the Node
+/** Returns the index of the GraphNode
 * @return The index
 */
 template<typename T>
-unsigned MyLibrary::Node<T>::getIndex() const
+unsigned GraphNode<T>::getIndex() const
 {
 	return this->m_Index;
 }
 
-/** Returns the type of the Node
+/** Returns the type of the GraphNode
 * @return The type
 */
 template<typename T>
-T MyLibrary::Node<T>::getData() const
+T GraphNode<T>::getData() const
 {
 	return this->m_Data;
 }
 
-/** Sets the index of the Node
+/** Sets the index of the GraphNode
 * @param aIndex The index
 */
 template<typename T>
-void MyLibrary::Node<T>::setIndex(const unsigned aIndex)
+void GraphNode<T>::setIndex(const unsigned aIndex)
 {
 	this->m_Index = aIndex;
 }

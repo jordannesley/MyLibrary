@@ -6,15 +6,13 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
-#include "Graph_Node.h"
+#include "Graph_GraphNode.h"
 #include "Graph_AdjacentNode.h"
 #include "MyList.h"
 #include <vector>
 
 #pragma unmanaged
 
-
-namespace MyLibrary {
 
 	template<typename T>
 	struct EdgeData
@@ -28,31 +26,33 @@ namespace MyLibrary {
 	class Graph
 	{
 	private:
-		std::vector<Node<T1>> m_NodeList;
+		std::vector<GraphNode<T1>> m_NodeList;
 		std::vector<MyList<AdjacentNode<T2>>> m_AdjacentNodeList;
-		Graph(const Graph<T1, T2>& aCopy);
+
 	public:
 		Graph();
-		Graph(const std::vector<Node<T1>> aNodes);
+		Graph(const std::vector<GraphNode<T1>> aGraphNodes);
+		Graph(const Graph<T1, T2>& aCopy);
 
-		Node<T1> getNode(const unsigned aNodeIndex) const;
-		std::vector<Node<T1>> getAllNodes() const;
+		GraphNode<T1> getNode(const unsigned aGraphNodeIndex) const;
+		std::vector<GraphNode<T1>> getAllNodes() const;
 		EdgeData<T2> getEdgeData(const unsigned aStartNode, const unsigned aEndNode) const;
-		std::vector<EdgeData<T2>> getAllEdges(const unsigned aNodeIndex) const;
+		MyList<EdgeData<T2>> getAllEdges(const unsigned aNodeIndex) const;
 
-		unsigned addNode(const Node<T1> aNode);
+		unsigned addNode(const GraphNode<T1> aNode);
 		void addEdge(const unsigned aStartNode, const unsigned aEndNode, const T2 aData);
 		bool isConnected(const unsigned aStartNode, const unsigned aEndNode);
+
+		Graph<T1, T2>& operator=(const Graph<T1, T2>& aRight);
 	};
-};
 
 /** Default constructor for Graph
 */
 template<typename T1, typename T2>
-MyLibrary::Graph<T1,T2>::Graph()
+Graph<T1,T2>::Graph()
 {
 	// initialize the nodes list and edges
-	this->m_NodeList = std::vector<Node<T1>>();
+	this->m_NodeList = std::vector<GraphNode<T1>>();
 	this->m_AdjacentNodeList = std::vector<MyList<AdjacentNode<T2>>>();
 }
 
@@ -60,16 +60,26 @@ MyLibrary::Graph<T1,T2>::Graph()
 * @param aNodes The nodes to add for the Graph (node indexes will be different in the graph)
 */
 template<typename T1, typename T2>
-MyLibrary::Graph<T1,T2>::Graph(const std::vector<Node<T1>> aNodes)
+Graph<T1,T2>::Graph(const std::vector<GraphNode<T1>> aNodes)
 {
-	this->m_NodeList = std::vector<Node<T1>>(aNodes.size());
+	this->m_NodeList = std::vector<GraphNode<T1>>(aNodes.size());
 	for (unsigned lCount = 0; lCount < aNodes.size(); lCount++)
 	{
-		this->m_NodeList[lCount] = Node<T1>(lCount, aNodes[lCount].getData());
+		this->m_NodeList[lCount] = GraphNode<T1>(lCount, aNodes[lCount].getData());
 	}
 
 	// initialize the edges
-	this->m_AdjacentNodeList = std::vector<MyList<AdjacentNode<T2>>>(aNodes.size());//, MyList<AdjacentNode<T2>>());
+	this->m_AdjacentNodeList = std::vector<MyList<AdjacentNode<T2>>>(aNodes.size());
+}
+
+/** Copy constructor for Graph
+* @param aCopy The object to copy
+*/
+template<typename T1, typename T2>
+Graph<T1, T2>::Graph(const Graph<T1, T2>& aCopy)
+{
+	this->m_NodeList = aCopy.m_NodeList;
+	this->m_AdjacentNodeList = aCopy.m_AdjacentNodeList;
 }
 
 /** Returns the node of the specified index
@@ -77,7 +87,7 @@ MyLibrary::Graph<T1,T2>::Graph(const std::vector<Node<T1>> aNodes)
 * @return The node
 */
 template<typename T1, typename T2>
-MyLibrary::Node<T1> MyLibrary::Graph<T1,T2>::getNode(const unsigned aNodeIndex) const
+GraphNode<T1> Graph<T1,T2>::getNode(const unsigned aNodeIndex) const
 {
 	if (aNodeIndex >= this->m_NodeList.size()) throw 1;
 	return this->m_NodeList[aNodeIndex];
@@ -87,7 +97,7 @@ MyLibrary::Node<T1> MyLibrary::Graph<T1,T2>::getNode(const unsigned aNodeIndex) 
 * @return All the nodes of the graph
 */
 template<typename T1, typename T2>
-std::vector<MyLibrary::Node<T1>> MyLibrary::Graph<T1,T2>::getAllNodes() const
+std::vector<GraphNode<T1>> Graph<T1,T2>::getAllNodes() const
 {
 	return this->m_NodeList;
 }
@@ -98,7 +108,7 @@ std::vector<MyLibrary::Node<T1>> MyLibrary::Graph<T1,T2>::getAllNodes() const
 * @return The edge
 */
 template<typename T1, typename T2>
-MyLibrary::EdgeData<T2> MyLibrary::Graph<T1, T2>::getEdgeData(const unsigned aStartNode, const unsigned aEndNode) const
+EdgeData<T2> Graph<T1, T2>::getEdgeData(const unsigned aStartNode, const unsigned aEndNode) const
 {
 	if (aStartNode >= this->m_NodeList.size()) throw 1;
 	if (aEndNode >= this->m_NodeList.size()) throw 1;
@@ -125,11 +135,11 @@ MyLibrary::EdgeData<T2> MyLibrary::Graph<T1, T2>::getEdgeData(const unsigned aSt
 * @return The node
 */
 template<typename T1, typename T2>
-std::vector<MyLibrary::EdgeData<T2>> MyLibrary::Graph<T1,T2>::getAllEdges(const unsigned aNodeIndex) const
+MyList<EdgeData<T2>> Graph<T1,T2>::getAllEdges(const unsigned aNodeIndex) const
 {
 	MyListIterator<AdjacentNode<T2>> lCurrent = this->m_AdjacentNodeList[aNodeIndex].begin();
-	std::vector<EdgeData<T2>> lResult = std::vector<EdgeData<T2>>(this->m_AdjacentNodeList[aNodeIndex].size());
-	int Index = 0;
+	MyList<EdgeData<T2>> lResult;
+
 	while (lCurrent != this->m_AdjacentNodeList[aNodeIndex].end())
 	{
 		EdgeData<T2> lTemp;
@@ -137,10 +147,9 @@ std::vector<MyLibrary::EdgeData<T2>> MyLibrary::Graph<T1,T2>::getAllEdges(const 
 		lTemp.EndNode = (*lCurrent).getEndingNodeIndex();
 		lTemp.Data = (*lCurrent).getData();
 
-		lResult[Index] = lTemp;
+		lResult.pushBack(lTemp);
 
 		lCurrent++;
-		Index++;
 	}
 
 	return lResult;
@@ -151,13 +160,13 @@ std::vector<MyLibrary::EdgeData<T2>> MyLibrary::Graph<T1,T2>::getAllEdges(const 
 * @return The node index of the newly added node
 */
 template<typename T1, typename T2>
-unsigned MyLibrary::Graph<T1,T2>::addNode(const Node<T1> aNode)
+unsigned Graph<T1,T2>::addNode(const GraphNode<T1> aNode)
 {
-	Node<T1> lTemp(aNode);
+	GraphNode<T1> lTemp(aNode);
 	lTemp.setIndex(this->m_NodeList.size());
 	this->m_NodeList.push_back(lTemp);
 
-	this->m_AdjacentNodeList.push_back(MyList<MyLibrary::AdjacentNode<T2>>());
+	this->m_AdjacentNodeList.push_back(MyList<AdjacentNode<T2>>());
 
 	return this->m_NodeList[this->m_NodeList.size() - 1].getIndex();
 }
@@ -168,7 +177,7 @@ unsigned MyLibrary::Graph<T1,T2>::addNode(const Node<T1> aNode)
 * @param aData The data for the edge to store
 */
 template<typename T1, typename T2>
-void MyLibrary::Graph<T1,T2>::addEdge(const unsigned aStartNode, const unsigned aEndNode, const T2 aData)
+void Graph<T1,T2>::addEdge(const unsigned aStartNode, const unsigned aEndNode, const T2 aData)
 {
 	if (aStartNode >= this->m_NodeList.size()) throw 1;
 	if (aEndNode >= this->m_NodeList.size()) throw 1;
@@ -186,7 +195,7 @@ void MyLibrary::Graph<T1,T2>::addEdge(const unsigned aStartNode, const unsigned 
 * @param aEndNode Index of the first Node
 */
 template<typename T1, typename T2>
-bool MyLibrary::Graph<T1,T2>::isConnected(const unsigned aStartNode, const unsigned aEndNode)
+bool Graph<T1,T2>::isConnected(const unsigned aStartNode, const unsigned aEndNode)
 {
 	if (aStartNode >= this->m_NodeList.size()) throw 1;
 	if (aEndNode >= this->m_NodeList.size()) throw 1;
@@ -198,6 +207,18 @@ bool MyLibrary::Graph<T1,T2>::isConnected(const unsigned aStartNode, const unsig
 		lCurrent++;
 	}
 	return false;
+}
+
+/** The copy operator
+* @param aRight The object to copy
+* @return The copied object
+*/
+template<typename T1, typename T2>
+Graph<T1, T2>& Graph<T1, T2>::operator=(const Graph<T1, T2>& aRight)
+{
+	this->m_NodeList = aRight.m_NodeList;
+	this->m_AdjacentNodeList = aRight.m_AdjacentNodeList;
+	return *(this);
 }
 
 #endif

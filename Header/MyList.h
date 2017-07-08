@@ -16,6 +16,10 @@ struct Node
 	Node<T>* Previous;
 };
 
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+
 /**
 *
 */
@@ -36,19 +40,21 @@ public:
 	MyList();
 	MyList(const MyList<T>& aCopy);
 	~MyList();
-
+	
 	void pushBack(const T& aData);
 	void pushFront(const T& aData);
 	MyListIterator<T> insert(const MyListIterator<T>& aLoc, const T& aData);
 	void popFront();
 	void popBack();
-	void erase(MyListIterator<T> aLoc);
+	MyListIterator<T> erase(MyListIterator<T> aLoc);
 
 	int size() const;
 	MyListIterator<T> find(MyListIterator<T> aStart, MyListIterator<T> aEnd, const T& aValue) const;
 
 	MyListIterator<T> begin() const;
 	MyListIterator<T> end() const;
+
+	MyList<T>& operator=(const MyList<T>& aRight);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,6 +75,7 @@ public:
 	MyListIterator<T> prev() const;
 
 	T& operator*();
+	const T& operator*() const;
 	bool operator==(const MyListIterator<T>& aRight);
 	bool operator!=(const MyListIterator<T>& aRight);
 	MyListIterator<T>& operator++();
@@ -77,6 +84,8 @@ public:
 	MyListIterator<T> operator--(int);
 	MyListIterator<T>& operator=(const MyListIterator<T>& aRight);
 };
+
+////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -101,7 +110,7 @@ MyList<T>::MyList(const MyList<T>& aCopy)
 	this->m_Back = m_Front;
 	this->m_NumberOfElements = 0;
 
-	while (current != nullptr)
+	while (current != aCopy.m_Back)
 	{
 		this->pushBack(current->Data);
 		current = current->Next;
@@ -136,6 +145,10 @@ void MyList<T>::pushBack(const T& aData)
 	if (this->m_NumberOfElements == 1)
 	{
 		this->m_Front = this->m_Back->Previous;
+	}
+	else
+	{
+		NewNode->Previous->Next = NewNode;
 	}
 }
 
@@ -208,38 +221,44 @@ void MyList<T>::popBack()
 	
 	if (this->m_Back->Previous == this->m_Front)
 	{
+		delete this->m_Front;
 		this->m_Front = this->m_Back;
 	}
 	else
 	{
 		Node<T>* NewBack = this->m_Back->Previous->Previous;
+		delete this->m_Back->Previous;
+		this->m_Back->Previous = NewBack;
 		NewBack->Next = this->m_Back;
 	}
-
-	delete this->m_Back->Previous;
-	this->m_Back->Previous = nullptr;
 
 	this->m_NumberOfElements--;
 }
 
 template<typename T>
-void MyList<T>::erase(MyListIterator<T> aLoc)
+MyListIterator<T> MyList<T>::erase(MyListIterator<T> aLoc)
 {
 	if (aLoc.m_Ptr == this->m_Front)
 	{
 		this->popFront();
+		return this->begin();
 	}
 	else if (aLoc.m_Ptr == this->m_Back->Previous)
 	{
 		this->popBack();
+		return this->end();
 	}
 	else
 	{
 		Node<T>* RemoveNode = aLoc.m_Ptr;
 		RemoveNode->Previous->Next = RemoveNode->Next;
 		RemoveNode->Next->Previous = RemoveNode->Previous;
+		MyListIterator<T> Result(RemoveNode->Next);
+		this->m_NumberOfElements--;
 		delete RemoveNode;
+		return Result;
 	}
+	return MyListIterator<T>(nullptr);
 }
 
 template<typename T>
@@ -271,6 +290,26 @@ template<typename T>
 MyListIterator<T> MyList<T>::end() const
 {
 	return MyListIterator<T>(this->m_Back);
+}
+
+template<typename T>
+MyList<T>& MyList<T>::operator=(const MyList<T>& aRight)
+{
+	Node<T>* current = aRight.m_Front;
+
+	this->m_Front = new Node<T>;
+	this->m_Front->Next = nullptr;
+	this->m_Front->Previous = nullptr;
+	this->m_Back = m_Front;
+	this->m_NumberOfElements = 0;
+
+	while (current != aRight.m_Back)
+	{
+		this->pushBack(current->Data);
+		current = current->Next;
+	}
+
+	return *this;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -308,6 +347,12 @@ MyListIterator<T> MyListIterator<T>::prev() const
 
 template<typename T>
 T& MyListIterator<T>::operator*()
+{
+	return this->m_Ptr->Data;
+}
+
+template<typename T>
+const T& MyListIterator<T>::operator*() const
 {
 	return this->m_Ptr->Data;
 }
