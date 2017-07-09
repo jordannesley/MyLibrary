@@ -49,21 +49,22 @@ void VoronoiDiagram::PostProcessing(std::vector<Position>& aPolygonCenters, MyLi
 
 	while (CheckCircle)
 	{
+		lCircle = { -1.0, 0.0, 0.0 };
 		lRemoveLocation = aParabolaList.begin();
 		for (MyListIterator<int> il = aParabolaList.begin().next(); il != aParabolaList.end().prev(); il++)
 		{
-			if ((*(il.prev())) != *(il.next()))
+			if (*(il.prev()) != *(il.next()))
 			{
 				double lDeterminant = calculateDeterminant(aPolygonCenters[*(il.prev())], aPolygonCenters[(*il)], aPolygonCenters[*(il.next())]);
 				if (lDeterminant < 0.0)
 				{
 					// should calculate the intersections of the two parabolas, would need to increment the sweep line in this case
 					struct Circle lTempCircle = CreateCircle(aPolygonCenters[*(il.prev())], aPolygonCenters[*(il)], aPolygonCenters[*(il.next())]);
-					if (lRemoveLocation == aParabolaList.begin() || (lCircle.Radius > 0.0 && lTempCircle.Center.Y > lCircle.Center.Y))
+					if (lRemoveLocation == aParabolaList.begin() || (lCircle.Radius > 0.0 && (lTempCircle.Center.Y - lTempCircle.Radius) > (lCircle.Center.Y- lCircle.Radius)))
 					{
 						lCircle = lTempCircle;
 						lRemoveLocation = il;
-					}
+					} 
 				}
 			}
 		}
@@ -98,7 +99,7 @@ void VoronoiDiagram::ProcessCircleEvents(double aSweepLine, std::vector<Position
 	{
 		while (CheckCircle)
 		{
-			lCircle = { 0.0, aSweepLine, -1.0 };
+			lCircle = { -1.0, 0.0, 0.0 };
 			lRemoveLocation = aParabolaList.begin();
 			for (MyListIterator<int> il = aParabolaList.begin().next(); il != aParabolaList.end().prev(); il++)
 			{
@@ -111,7 +112,7 @@ void VoronoiDiagram::ProcessCircleEvents(double aSweepLine, std::vector<Position
 						struct Circle lTempCircle = CreateCircle(aPolygonCenters[*(il.prev())], aPolygonCenters[*(il)], aPolygonCenters[*(il.next())]);
 						if (Utilities::Abs(lTempCircle.Center.Y - aSweepLine) >= lTempCircle.Radius)
 						{
-							if (lRemoveLocation == aParabolaList.begin() || (lCircle.Radius > 0.0 && lTempCircle.Center.Y > lCircle.Center.Y))
+							if (lRemoveLocation == aParabolaList.begin() || (lCircle.Radius > 0.0 && (lTempCircle.Center.Y - lTempCircle.Radius) > (lCircle.Center.Y - lCircle.Radius)))
 							{
 								lCircle = lTempCircle;
 								lRemoveLocation = il;
